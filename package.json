@@ -1,7 +1,7 @@
 {
   "name": "svelte-injector",
-  "version": "1.0.3",
-  "main": "lib/main.js",
+  "version": "1.0.4",
+  "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
