@@ -1,6 +1,6 @@
 {
   "name": "svelte-injector",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "repository": {
@@ -21,15 +21,13 @@
   "bugs": {
     "url": "https://github.com/KoRnFactory/svelte-injector/issues"
   },
-  "dependencies": {
-    "svelte": "^3.32.0"
-  },
   "devDependencies": {
     "cpy-cli": "^3.1.1",
     "cross-env": "^7.0.3",
     "del-cli": "^3.0.1",
     "prettier": "^2.2.1",
     "prettier-plugin-svelte": "^2.1.1",
+    "svelte": "^3.32.0",
     "svelte-loader": "^3.0.0",
     "ts-loader": "^8.0.14",
     "tslint": "^6.1.3",
