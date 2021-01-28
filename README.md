@@ -1,6 +1,16 @@
 # svelte-injector
 
-Tool to integrate svelte components into other frontend frameworks
+> Tool to integrate svelte components into other frontend frameworks
+
+* [Installing](#installing)
+* [Usage](#usage)
+  * [Setup](#setup)
+  * [Injecting](#injecting-components)
+* [Framework Integration](#framework-integration)
+  * [AngularJs](#angularjs)
+  * [React](#react)
+  * [Angular](#angular)  
+* [JS API](#js-api)
 
 
 # Installing
@@ -48,9 +58,9 @@ SvelteInjector.createElement(target, Hello, props);
 ```
 
 ### Linked components
-Link component class with a string to use it everywhere
+Link component class with a string to use it anywhere.
 
-in your index.module
+Import your components somewhere in your bundle (es: create an `index.module` file)
 ```typescript
 import Hello from "./Hello.svelte"
 
@@ -79,6 +89,21 @@ You can use `data-to-render` attribute as an `{if}` block in Svelte
 ```html
 <div data-component-name="hello" data-props='{"name": "world"}' data-to-render"true"></div>
 ```
+
+### Backend requested components
+you can create components that are requested in your source HTML.
+
+If your HTML contains any component markup like so:
+```html
+<div data-component-name="hello" data-props='{"name": "world"}'></div>
+```
+
+Just run `createElementsFromTemplate()` once to render them.
+```typescript
+SvelteInjector.createElementsFromTemplate(document.body);
+```
+
+<i>NOTE: the component with the requested name needs to be linked first.</i>
 
 # Framework integration
 This project was created to easily migrate apps from AngularJs to Svelte, but it is not framework specific.
@@ -158,6 +183,94 @@ Conditional rendering: you can use {data-to-render} as the condition in an {#if}
 
 ### createElementsFromTemplate()
 Is exactly like `syncTemplate()` but is made for a one time run only.
+
+## React
+
+Docs in progress
+
+## Angular
+
+Docs in progress
+
+
+# JS API
+
+##Elements
+Interface `SvelteElement`
+### updateProps(props)
+
+####props `object`
+
+The new props object. All previous props will be dropped.
+
+### updateToRender(toRender)
+
+####toRender `boolean`
+
+The new props object. All previous props will be dropped.
+
+### destroy()
+
+Destroys the component.
+
+##Injector
+### createElement(target, Component, props[,toRender])
+
+#### target `HTMLElement`
+
+The element in which the component will be rendered
+
+####Component `SvelteComponent`
+
+The Svelte component Class
+
+####props `object`
+
+An object with props compatible with the Svelte Component
+
+####toRender `boolean` (default = true)
+
+Boolean that indicates if the component should render immediately.
+
+####RETURN `Promise<SvelteElement>`
+
+A promise that resolves the `SvelteElement` when the component is mounted or created (when toRender = false)
+
+### createLinkedElement(target, componentName, props[,toRender])
+
+#### target `HTMLElement`
+
+The element in which the component will be rendered
+
+####componentName `string`
+
+The name of the component as linked with `link()`
+
+####props `object`
+
+An object with props compatible with the Svelte Component
+
+####toRender `boolean` (default = true)
+
+Boolean that indicates if the component should render immediately
+
+
+####RETURN `Promise<SvelteElement>`
+
+A promise that resolves the `SvelteElement` when the component is mounted or created (when toRender = false)
+
+
+### syncTemplate(target)
+
+#### target `HTMLElement`
+
+The element in which the components will be looked for.
+
+####RETURN `Promise<SvelteElement[]>`
+
+A promise array for each created component that resolves the `SvelteElement` when the component is mounted or created (when toRender = false)
+
+<i>NOTE: this method is NOT synchronous</i>
 
 # License
 
