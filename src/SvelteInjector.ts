@@ -71,19 +71,17 @@ export class SvelteInjector {
 	/**
 	 * Creates a single element at the bottom of an HTML element by component class.
 	 *
-	 * For performance reasons it is recommended that you use this function in a $timeout.
-	 *
 	 * @example
 	 * import Component from "src/Component.svelte"
 	 *
-	 * this.$timeout(async () => {
-	 * 	this.svelteChild = await AngularToSvelte.createElement(this.$element[0], Component, {name: "world"});
-	 * });
+	 * this.svelteChild = await SvelteInjector.createElement(this.$element[0], Component, props);
 	 *
 	 * @param domElement - The element in which the component will be rendered
 	 * @param Component - The Svelte component Class
 	 * @param props - An object with props compatible with the Svelte Component
 	 * @param toRender = true - Boolean that indicates if the component should render immediately
+	 *
+	 * @return - A promise that resolves the {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
 	public static createElement(
 		domElement: HTMLElement,
@@ -97,17 +95,15 @@ export class SvelteInjector {
 	/**
 	 * Creates a single element at the bottom of an HTML element by component name.
 	 *
-	 * For performance reasons it is recommended that you use this function in a $timeout.
-	 *
 	 * @example
-	 * this.$timeout(async () => {
-	 * 	this.svelteChild = await AngularToSvelte.createLinkedElement(this.$element[0], 'hello', {name: "world"});
-	 * });
+	 * 	this.svelteChild = await SvelteInjector.createLinkedElement(this.$element[0], 'hello', props);
 	 *
 	 * @param domElement - The element in which the component will be rendered
 	 * @param name - The Svelte component name as linked into the index module
 	 * @param props - An object with props compatible with the Svelte Component
 	 * @param toRender = true - Boolean that indicates if the component should render immediately
+	 *
+	 * @return - A promise that resolves the {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
 	public static createLinkedElement(domElement: HTMLElement, name: string, props: any, toRender = true): Promise<SvelteElement> {
 		const Component = this.findComponent(name);
@@ -227,7 +223,7 @@ export class SvelteInjector {
 	 * @param components - An array of Svelte internal to be destroyed
 	 *
 	 * @example
-	 * AngularToSvelte.destroyAll(this.svelteChildren);
+	 * SvelteInjector.destroyAll(this.svelteChildren);
 	 */
 	public static async destroyAll(components: SvelteElement[]) {
 		const promises: any[] = [];
@@ -281,11 +277,8 @@ export class SvelteInjector {
 	/**
 	 * Creates, updates and destroys all Svelte internal found as children of domTarget
 	 *
-	 * For performance reasons it is recommended that you use this function in a $timeout.
-	 *
 	 * @description The $onChanges function won't be triggered if your INTERNAL state has changed. Only if your component props have.
 	 * If your component uses internal state management, put the above snippet at the end of every state management function.
-	 * Oh, and if you're asking. YES, the timeout is needed.
 	 *
 	 * <i>WARNING: if an angular element with an ng-if has a svelte child, it will create a new component every time the ng-if expression is evaluated to true.
 	 * Use "toRender" prop if you want to reuse the component.</i>
@@ -293,19 +286,19 @@ export class SvelteInjector {
 	 * <b>Don't forget</b> to use {@link destroyAll} in your $onDestroy to optimize memory usage
 	 *
 	 * @example
-	 * // 1 - Put this in your $onChanges:
-	 * this.$timeout(async () => {
-	 *   this.svelteChildren = await AngularToSvelte.syncTemplate(this.$element[0]);
-	 * })
+	 *  //1 - Use the funcion in a recurring lifecycle method
+	 *  this.svelteChildren = await SvelteInjector.syncTemplate(this.$element[0]);
 	 *
 	 * //2 - Use the component in your markup like so:
 	 * <div data-component-name="hello" data-props='{"name": "world"}'></div>
 	 *
-	 * @example ng-if
-	 * // You can use {data-to-render} as an ng-if
+	 * @example conditional rendering
+	 * // You can use {data-to-render} as the condition in an {#if}
 	 * <div data-component-name="hello" data-props='{"name": "world"}' data-to-render"'true'"></div>
 	 *
 	 * @param domTarget - The dom element to query for Svelte children to create/update/destroy
+	 *
+	 * @return - An array of promises that resolve the {@link SvelteElement} when the components are mounted or created (when toRender = false)
 	 */
 	public static async syncTemplate(domTarget: HTMLElement): Promise<SvelteElement[]> {
 		const length = await this.getComponentsNumber();
