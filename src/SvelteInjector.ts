@@ -1,3 +1,4 @@
+import App from "./App.svelte";
 import { components } from "./stores";
 import { SvelteComponent } from "svelte";
 
@@ -23,15 +24,45 @@ const svelteIndexAttribute = "svelte-element-index";
 
 /**
  * @description Framework to inject Svelte components into AngularJS plus some tools.
+ *
+ *
+ * Init the framework via {@link init()}, then create your components.
+ *
+ *
  * To use a component use either {@link createElement}, {@link createLinkedElement} or {@link syncTemplate}.
  *
  * Have fun!
  *
  */
-export class AngularToSvelte {
+export class SvelteInjector {
 	static links: SvelteLink[] = [];
 	static lastIndex = -1;
 
+	/**
+	 * Inits the Svelte App
+	 */
+	public static init() {
+		// Create server side components
+		SvelteInjector.createElementsFromTemplate(document.body).then(() => console.log("Server side Svelte components created"));
+
+		const svelteEntrypoint = document.createElement("div");
+		svelteEntrypoint.id = "svelte-entrypoint";
+		document.body.prepend(svelteEntrypoint);
+
+		// Create Svelte App
+		new App({
+			target: svelteEntrypoint,
+		});
+	}
+
+	/**
+	 * Links a component class to a string name.
+	 *
+	 * Useful to create components from the DOM template with {@link createLinkedElement} or {@link syncTemplate()}.
+	 *
+	 * @param name - name in kebab-case of the component
+	 * @param svelteComponent - Svelte component class
+	 */
 	public static link(name: string, svelteComponent: typeof SvelteComponent) {
 		this.links.push({ name, svelteComponent });
 	}
@@ -78,11 +109,10 @@ export class AngularToSvelte {
 	 * @param toRender = true - Boolean that indicates if the component should render immediately
 	 */
 	public static createLinkedElement(domElement: HTMLElement, name: string, props: any, toRender = true): Promise<SvelteElement> {
-		if (!domElement) return null;
 		let Component = this.findComponent(name);
+		if (!Component) return Promise.reject();
 		return this._createElement(domElement, Component, props, toRender);
 	}
-
 
 	private static _createElement(
 		domElement: HTMLElement,
@@ -90,13 +120,13 @@ export class AngularToSvelte {
 		props: any,
 		toRender: boolean,
 	): Promise<SvelteElement> {
-		if (!Component || !domElement) return null;
-		// let { toRender } = this.sanitizedProps(props);
+		return new Promise((resolve, reject) => {
+			if (!Component || !domElement) reject();
+			// let { toRender } = this.sanitizedProps(props);
 
-		let index = ++this.lastIndex;
-		domElement.setAttribute(svelteIndexAttribute, index.toString());
+			let index = ++this.lastIndex;
+			domElement.setAttribute(svelteIndexAttribute, index.toString());
 
-		return new Promise((resolve) => {
 			const compData: SvelteElement = {
 				domElement,
 				Component,
@@ -107,13 +137,13 @@ export class AngularToSvelte {
 					resolve(compData);
 				},
 				async destroy() {
-					await AngularToSvelte.destroy(compData);
+					await SvelteInjector.destroy(compData);
 				},
 				async updateProps(newProps: any) {
-					await AngularToSvelte.setProps(compData, newProps);
+					await SvelteInjector.setProps(compData, newProps);
 				},
 				async setToRender(toRender: boolean) {
-					await AngularToSvelte.setToRender(compData, toRender);
+					await SvelteInjector.setToRender(compData, toRender);
 				},
 			};
 
@@ -124,13 +154,6 @@ export class AngularToSvelte {
 			this.addComponent(compData);
 		});
 	}
-
-/*	private static sanitizedProps(props: any) {
-		let toRender = props?.toRender ?? true;
-		delete props?.toRender;
-
-		return { toRender };
-	}*/
 
 	private static async setProps(component: SvelteElement, props: any) {
 		component.props = props;
@@ -145,14 +168,15 @@ export class AngularToSvelte {
 	}
 
 	static async createElementsFromTemplate(target: HTMLElement): Promise<SvelteElement[]> {
-		const svelteElements = target.querySelectorAll("[data-component-name]");
+		const svelteElements = target.querySelectorAll<HTMLElement>("[data-component-name]");
 
-		if (!svelteElements || !svelteElements.length) return;
+		if (!svelteElements || !svelteElements.length) return [];
 
 		let createdComponents = [];
 
+		// @ts-ignore
 		for (const svelteElement of svelteElements) {
-			let createdElement = await this.createElementFromTemplate(svelteElement as HTMLElement);
+			let createdElement = await this.createElementFromTemplate(svelteElement);
 			if (createdElement) {
 				createdComponents.push(createdElement);
 			}
@@ -162,15 +186,16 @@ export class AngularToSvelte {
 
 	private static createElementFromTemplate(target: HTMLElement): Promise<SvelteElement> {
 		const componentName = target.dataset.componentName;
+		if (!componentName) return Promise.reject();
 		const component = this.findComponent(componentName);
-		if (!component) return;
+		if (!component) return Promise.reject();
 		const props = this.extractProps(target);
 		const toRender = this.extractToRender(target);
 
 		return this.createElement(target as HTMLElement, component, props, toRender);
 	}
 
-	public static async getElementFromSvelteIndex(index: string | number): Promise<SvelteElement> {
+	public static async getElementFromSvelteIndex(index: string | number): Promise<SvelteElement | undefined> {
 		return new Promise((resolve) => {
 			const unsubscribe = components.subscribe((components) => {
 				let element = components.find((component) => component.index.toString() === index.toString());
@@ -180,7 +205,7 @@ export class AngularToSvelte {
 		});
 	}
 
-	private static findComponent(name: string): typeof SvelteComponent {
+	private static findComponent(name: string): typeof SvelteComponent | undefined {
 		return this.links.find((link) => link.name.toLowerCase() === name.toLowerCase())?.svelteComponent;
 	}
 
@@ -189,7 +214,7 @@ export class AngularToSvelte {
 			components.update((components) => {
 				const index = components.indexOf(component);
 				components.splice(index, 1);
-				window["svelteElements"] = components;
+				// window["svelteElements"] = components;
 				return components;
 			});
 			resolve(undefined);
@@ -204,7 +229,7 @@ export class AngularToSvelte {
 	 * AngularToSvelte.destroyAll(this.svelteChildren);
 	 */
 	public static async destroyAll(components: SvelteElement[]) {
-		let promises = [];
+		let promises: any[] = [];
 		components.forEach((component) => promises.push(component.destroy()));
 		await Promise.all(promises);
 	}
@@ -212,7 +237,7 @@ export class AngularToSvelte {
 	private static async clean(): Promise<number> {
 		return new Promise((resolve) => {
 			const unsubscribe = components.subscribe(async (components) => {
-				const orphans = components.filter((component) => document.body.contains(component.domElement) === false);
+				const orphans = components.filter((component) => !document.body.contains(component.domElement));
 				await this.destroyAll(orphans);
 				resolve(components.length);
 			});
@@ -223,7 +248,7 @@ export class AngularToSvelte {
 	private static addComponent(component: SvelteElement) {
 		components.update((components) => {
 			components.push(component);
-			window["svelteElements"] = components;
+			// window["svelteElements"] = components;
 			return components;
 		});
 	}
@@ -233,25 +258,24 @@ export class AngularToSvelte {
 			components.update((components) => {
 				const index = components.indexOf(component);
 				components[index] = component;
-				window["svelteElements"] = components;
+				// window["svelteElements"] = components;
 				resolve(undefined);
 				return components;
 			});
 		});
 	}
 
-	private static async getComponentsNumber() {
+	private static async getComponentsNumber(): Promise<number> {
 		return new Promise((resolve) => {
 			const unsubscribe = components.subscribe(async (components) => {
 				if (components.length > 0) {
-					resolve(await AngularToSvelte.clean());
+					resolve(await SvelteInjector.clean());
 				}
 				resolve(0);
 			});
 			unsubscribe();
 		});
 	}
-
 
 	/**
 	 * Creates, updates and destroys all Svelte components found as children of domTarget
@@ -287,10 +311,11 @@ export class AngularToSvelte {
 
 		const svelteTargets = domTarget.querySelectorAll("[data-component-name]");
 
-		if (!svelteTargets || !svelteTargets.length) return;
+		if (!svelteTargets || !svelteTargets.length) return Promise.resolve([]);
 
 		let updatedComponents = [];
 
+		// @ts-ignore
 		for (const target of svelteTargets) {
 			if (length > 0 && target.hasAttribute(svelteIndexAttribute)) {
 				// The element has already been created
@@ -323,6 +348,8 @@ export class AngularToSvelte {
 
 	private static extractProps(svelteElement: HTMLElement) {
 		let propsAttribute = svelteElement.dataset.props;
+
+		if (!propsAttribute) return null;
 
 		if (propsAttribute.startsWith("%")) {
 			propsAttribute = decodeURI(propsAttribute);

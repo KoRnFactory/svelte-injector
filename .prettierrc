@@ -1,0 +1,13 @@
+{
+  "semi": true,
+  "useTabs": true,
+  "trailingComma": "all",
+  "overrides": [
+    {
+      "files": "*.*",
+      "options": {
+        "printWidth": 140
+      }
+    }
+  ]
+}
