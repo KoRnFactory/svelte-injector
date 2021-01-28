@@ -1,1 +1,3 @@
-export { SvelteInjector } from "./SvelteInjector";
+import {SvelteInjector} from "./SvelteInjector";
+
+export default SvelteInjector;
