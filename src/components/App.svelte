@@ -1,6 +1,6 @@
 <script>
-	import { components } from "./stores";
-	import Portal from "./components/Portal";
+	import { components } from "../stores";
+	import Portal from "./Portal";
 </script>
 
 {#each $components as component}

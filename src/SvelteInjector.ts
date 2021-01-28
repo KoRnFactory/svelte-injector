@@ -1,4 +1,4 @@
-import App from "./App.svelte";
+import App from "./components/App.svelte";
 import { components } from "./stores";
 import { SvelteComponent } from "svelte";
 

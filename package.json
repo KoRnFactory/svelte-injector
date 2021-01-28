@@ -1,6 +1,6 @@
 {
   "name": "svelte-injector",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "lib/main.js",
   "types": "lib/index.d.ts",
   "repository": {
@@ -25,6 +25,7 @@
     "svelte": "^3.32.0"
   },
   "devDependencies": {
+    "cpy-cli": "^3.1.1",
     "cross-env": "^7.0.3",
     "del-cli": "^3.0.1",
     "prettier": "^2.2.1",
@@ -40,9 +41,9 @@
   "homepage": "https://github.com/KoRnFactory/svelte-injector#readme",
   "description": "Tool to integrate svelte components into other frontend frameworks",
   "scripts": {
-    "clean" : "del-cli lib",
+    "clean": "del-cli lib",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run clean && cross-env NODE_ENV=production webpack",
+    "build": "npm run clean && tsc && cpy src/components lib/components",
     "dev": "npm run clean && webpack",
     "prepare": "npm run build",
     "format": "prettier --write \"src/**/*.ts\"",
