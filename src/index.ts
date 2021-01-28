@@ -1,1 +1,1 @@
-export { SvelteInjector } from "./SvelteInjector"
+export { SvelteInjector } from "./SvelteInjector";
