@@ -41,7 +41,8 @@
   "scripts": {
     "clean": "del-cli lib",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run clean && tsc && cpy src/components lib/components",
+    "copy": "cpy **/*.svelte ../lib/ --cwd=src --parents",
+    "build": "npm run clean && tsc && npm run copy",
     "dev": "npm run clean && webpack",
     "prepare": "npm run build",
     "format": "prettier --write \"src/**/*.ts\"",

@@ -1,4 +1,4 @@
-import App from "./components/App.svelte";
+import App from "./InjectedComponents.svelte";
 import { components } from "./stores";
 import { SvelteComponent } from "svelte";
 
@@ -23,10 +23,10 @@ export interface SvelteElement {
 const svelteIndexAttribute = "svelte-element-index";
 
 /**
- * @description Framework to inject Svelte components into AngularJS plus some tools.
+ * @description Framework to inject Svelte internal into AngularJS plus some tools.
  *
  *
- * Init the framework via {@link init()}, then create your components.
+ * Init the framework via {@link init()}, then create your internal.
  *
  *
  * To use a component use either {@link createElement}, {@link createLinkedElement} or {@link syncTemplate}.
@@ -43,8 +43,8 @@ export class SvelteInjector {
 	 * Inits the Svelte App
 	 */
 	public static init() {
-		// Create server side components
-		SvelteInjector.createElementsFromTemplate(document.body).then(() => console.debug("Server side Svelte components created"));
+		// Create server side internal
+		SvelteInjector.createElementsFromTemplate(document.body).then(() => console.debug("Server side Svelte internal created"));
 
 		const svelteEntrypoint = document.createElement("div");
 		svelteEntrypoint.id = "svelte-entrypoint";
@@ -59,7 +59,7 @@ export class SvelteInjector {
 	/**
 	 * Links a component class to a string name.
 	 *
-	 * Useful to create components from the DOM template with {@link createLinkedElement} or {@link syncTemplate()}.
+	 * Useful to create internal from the DOM template with {@link createLinkedElement} or {@link syncTemplate()}.
 	 *
 	 * @param name - name in kebab-case of the component
 	 * @param svelteComponent - Svelte component class
@@ -168,7 +168,7 @@ export class SvelteInjector {
 		}
 	}
 
-	static async createElementsFromTemplate(target: HTMLElement): Promise<SvelteElement[]> {
+	public static async createElementsFromTemplate(target: HTMLElement): Promise<SvelteElement[]> {
 		const svelteElements = target.querySelectorAll<HTMLElement>("[data-component-name]");
 
 		if (!svelteElements || !svelteElements.length) return [];
@@ -215,7 +215,7 @@ export class SvelteInjector {
 			components.update((components) => {
 				const index = components.indexOf(component);
 				components.splice(index, 1);
-				// window["svelteElements"] = components;
+				// window["svelteElements"] = internal;
 				return components;
 			});
 			resolve(undefined);
@@ -223,8 +223,8 @@ export class SvelteInjector {
 	}
 
 	/**
-	 * Destroys all components in the array
-	 * @param components - An array of Svelte components to be destroyed
+	 * Destroys all internal in the array
+	 * @param components - An array of Svelte internal to be destroyed
 	 *
 	 * @example
 	 * AngularToSvelte.destroyAll(this.svelteChildren);
@@ -249,7 +249,7 @@ export class SvelteInjector {
 	private static addComponent(component: SvelteElement) {
 		components.update((components) => {
 			components.push(component);
-			// window["svelteElements"] = components;
+			// window["svelteElements"] = internal;
 			return components;
 		});
 	}
@@ -259,7 +259,7 @@ export class SvelteInjector {
 			components.update((components) => {
 				const index = components.indexOf(component);
 				components[index] = component;
-				// window["svelteElements"] = components;
+				// window["svelteElements"] = internal;
 				resolve(undefined);
 				return components;
 			});
@@ -279,7 +279,7 @@ export class SvelteInjector {
 	}
 
 	/**
-	 * Creates, updates and destroys all Svelte components found as children of domTarget
+	 * Creates, updates and destroys all Svelte internal found as children of domTarget
 	 *
 	 * For performance reasons it is recommended that you use this function in a $timeout.
 	 *
