@@ -1,0 +1,19 @@
+{
+  "name": "svelte-injector",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KoRnFactory/svelte-injector.git"
+  },
+  "author": "Federico Varano",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/KoRnFactory/svelte-injector/issues"
+  },
+  "dependencies": {
+    "svelte": "^3.32.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.18.0"
+  }
+}
