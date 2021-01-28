@@ -37,20 +37,21 @@ const svelteIndexAttribute = "svelte-element-index";
 export class SvelteInjector {
 	static links: SvelteLink[] = [];
 	static lastIndex = -1;
+	static app: App;
 
 	/**
 	 * Inits the Svelte App
 	 */
 	public static init() {
 		// Create server side components
-		SvelteInjector.createElementsFromTemplate(document.body).then(() => console.log("Server side Svelte components created"));
+		SvelteInjector.createElementsFromTemplate(document.body).then(() => console.debug("Server side Svelte components created"));
 
 		const svelteEntrypoint = document.createElement("div");
 		svelteEntrypoint.id = "svelte-entrypoint";
 		document.body.prepend(svelteEntrypoint);
 
 		// Create Svelte App
-		new App({
+		SvelteInjector.app = new App({
 			target: svelteEntrypoint,
 		});
 	}
@@ -109,7 +110,7 @@ export class SvelteInjector {
 	 * @param toRender = true - Boolean that indicates if the component should render immediately
 	 */
 	public static createLinkedElement(domElement: HTMLElement, name: string, props: any, toRender = true): Promise<SvelteElement> {
-		let Component = this.findComponent(name);
+		const Component = this.findComponent(name);
 		if (!Component) return Promise.reject();
 		return this._createElement(domElement, Component, props, toRender);
 	}
@@ -124,7 +125,7 @@ export class SvelteInjector {
 			if (!Component || !domElement) reject();
 			// let { toRender } = this.sanitizedProps(props);
 
-			let index = ++this.lastIndex;
+			const index = ++this.lastIndex;
 			domElement.setAttribute(svelteIndexAttribute, index.toString());
 
 			const compData: SvelteElement = {
@@ -161,7 +162,7 @@ export class SvelteInjector {
 	}
 
 	private static async setToRender(component: SvelteElement, toRender: boolean) {
-		if (component.toRender != toRender) {
+		if (component.toRender !== toRender) {
 			component.toRender = toRender;
 			await this.updateComponent(component);
 		}
@@ -172,11 +173,11 @@ export class SvelteInjector {
 
 		if (!svelteElements || !svelteElements.length) return [];
 
-		let createdComponents = [];
+		const createdComponents = [];
 
 		// @ts-ignore
 		for (const svelteElement of svelteElements) {
-			let createdElement = await this.createElementFromTemplate(svelteElement);
+			const createdElement = await this.createElementFromTemplate(svelteElement);
 			if (createdElement) {
 				createdComponents.push(createdElement);
 			}
@@ -198,7 +199,7 @@ export class SvelteInjector {
 	public static async getElementFromSvelteIndex(index: string | number): Promise<SvelteElement | undefined> {
 		return new Promise((resolve) => {
 			const unsubscribe = components.subscribe((components) => {
-				let element = components.find((component) => component.index.toString() === index.toString());
+				const element = components.find((component) => component.index.toString() === index.toString());
 				resolve(element);
 			});
 			unsubscribe();
@@ -229,7 +230,7 @@ export class SvelteInjector {
 	 * AngularToSvelte.destroyAll(this.svelteChildren);
 	 */
 	public static async destroyAll(components: SvelteElement[]) {
-		let promises: any[] = [];
+		const promises: any[] = [];
 		components.forEach((component) => promises.push(component.destroy()));
 		await Promise.all(promises);
 	}
@@ -307,13 +308,13 @@ export class SvelteInjector {
 	 * @param domTarget - The dom element to query for Svelte children to create/update/destroy
 	 */
 	public static async syncTemplate(domTarget: HTMLElement): Promise<SvelteElement[]> {
-		let length = await this.getComponentsNumber();
+		const length = await this.getComponentsNumber();
 
 		const svelteTargets = domTarget.querySelectorAll("[data-component-name]");
 
 		if (!svelteTargets || !svelteTargets.length) return Promise.resolve([]);
 
-		let updatedComponents = [];
+		const updatedComponents = [];
 
 		// @ts-ignore
 		for (const target of svelteTargets) {
@@ -325,10 +326,10 @@ export class SvelteInjector {
 
 				if (document.body.contains(element.domElement)) {
 					// Components props should be updated
-					let props = this.extractProps(target as HTMLElement);
+					const props = this.extractProps(target as HTMLElement);
 					element.updateProps(props);
 					// Components toRender should be updated
-					let toRender = this.extractToRender(target as HTMLElement);
+					const toRender = this.extractToRender(target as HTMLElement);
 					element.setToRender(toRender);
 					updatedComponents.push(element);
 				} else {
@@ -370,7 +371,7 @@ export class SvelteInjector {
 	}
 
 	private static extractToRender(svelteElement: HTMLElement) {
-		let toRenderAttribute = svelteElement.dataset.toRender;
+		const toRenderAttribute = svelteElement.dataset.toRender;
 
 		if (!toRenderAttribute) return true;
 

@@ -1,0 +1,1 @@
+export { SvelteInjector } from "./SvelteInjector"

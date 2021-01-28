@@ -1,12 +1,13 @@
 {
   "name": "svelte-injector",
   "version": "1.0.0",
-  "main": "src/SvelteInjector.ts",
-  "module": "src/SvelteInjector.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/KoRnFactory/svelte-injector.git"
   },
+  "keywords": ["svelte", "injector", "angularjs", "framework", "react", "components", "portal"],
   "author": "Federico Varano",
   "license": "MIT",
   "bugs": {
@@ -18,6 +19,8 @@
   "devDependencies": {
     "prettier": "^2.2.1",
     "prettier-plugin-svelte": "^2.1.1",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.1.3",
     "webpack": "^5.18.0"
   },
@@ -25,6 +28,15 @@
   "description": "Tool to integrate svelte components into other frontend frameworks",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
-  }
+    "build": "tsc",
+    "prepare": "npm run build",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "lint": "tslint -p tsconfig.json",
+    "preversion" : "npm run lint",
+    "version" : "npm run format && git add -A src",
+    "postversion" : "git push && git push --tags"
+  },
+  "files": [
+    "lib/**/*"
+  ]
 }
