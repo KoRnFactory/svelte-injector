@@ -38,7 +38,7 @@ Then configure your bundler of choice to accept Svelte files.
 
 Create your Svelte App: --> [reference](https://svelte.dev/tutorial/making-an-app)
 
-`src/svelte/main.js`
+`src/svelte/main`
 
 ```typescript
 import App from "./App.svelte";
@@ -229,6 +229,8 @@ Conditional rendering: you can use {data-to-render} as the condition in an {#if}
 **Don't forget** to use `destroyAll()` in your `$onDestroy` to optimize memory usage
 
 ## React
+
+Documentation refers to **Class Components**, but can be applied to Functional Components with **hooks**.
 
 Use `SvelteInjector` functions at the end of the `componentDidMount` or `componentDidUpdate` lifecycle methods
 
