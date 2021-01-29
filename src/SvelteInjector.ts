@@ -1,4 +1,3 @@
-import App from "./InjectedComponents.svelte";
 import { components } from "./stores";
 import { SvelteComponent } from "svelte";
 
@@ -23,13 +22,11 @@ export interface SvelteElement {
 const svelteIndexAttribute = "svelte-element-index";
 
 /**
- * @description Framework to inject Svelte internal into AngularJS plus some tools.
+ * @description Framework to inject Svelte components into other frameworks plus some tools.
  *
+ * Refer to https://github.com/KoRnFactory/svelte-injector for full documentation
  *
- * Init the framework via {@link init()}, then create your internal.
- *
- *
- * To use a component use either {@link createElement}, {@link createLinkedElement} or {@link syncTemplate}.
+ * To use your component use either {@link createElement}, {@link createLinkedElement} or {@link syncTemplate}.
  *
  * Have fun!
  *
@@ -37,31 +34,13 @@ const svelteIndexAttribute = "svelte-element-index";
 export class SvelteInjector {
 	static links: SvelteLink[] = [];
 	static lastIndex = -1;
-	static app: App;
-
-	/**
-	 * Inits the Svelte App
-	 */
-	public static init() {
-		// Create server side internal
-		SvelteInjector.createElementsFromTemplate(document.body).then(() => console.debug("Server side Svelte internal created"));
-
-		const svelteEntrypoint = document.createElement("div");
-		svelteEntrypoint.id = "svelte-entrypoint";
-		document.body.prepend(svelteEntrypoint);
-
-		// Create Svelte App
-		SvelteInjector.app = new App({
-			target: svelteEntrypoint,
-		});
-	}
 
 	/**
 	 * Links a component class to a string name.
 	 *
-	 * Useful to create internal from the DOM template with {@link createLinkedElement} or {@link syncTemplate()}.
+	 * Useful to create components from the DOM template with {@link createLinkedElement} or {@link syncTemplate}.
 	 *
-	 * @param name - name in kebab-case of the component
+	 * @param name - name of the component as previously linked with {@link link}
 	 * @param svelteComponent - Svelte component class
 	 */
 	public static link(name: string, svelteComponent: typeof SvelteComponent) {
@@ -211,7 +190,7 @@ export class SvelteInjector {
 			components.update((components) => {
 				const index = components.indexOf(component);
 				components.splice(index, 1);
-				// window["svelteElements"] = internal;
+				// window["svelteElements"] = components;
 				return components;
 			});
 			resolve(undefined);
@@ -219,8 +198,8 @@ export class SvelteInjector {
 	}
 
 	/**
-	 * Destroys all internal in the array
-	 * @param components - An array of Svelte internal to be destroyed
+	 * Destroys all components in the array
+	 * @param components - An array of Svelte components to be destroyed
 	 *
 	 * @example
 	 * SvelteInjector.destroyAll(this.svelteChildren);
@@ -245,7 +224,7 @@ export class SvelteInjector {
 	private static addComponent(component: SvelteElement) {
 		components.update((components) => {
 			components.push(component);
-			// window["svelteElements"] = internal;
+			// window["svelteElements"] = components;
 			return components;
 		});
 	}
@@ -255,7 +234,7 @@ export class SvelteInjector {
 			components.update((components) => {
 				const index = components.indexOf(component);
 				components[index] = component;
-				// window["svelteElements"] = internal;
+				// window["svelteElements"] = components;
 				resolve(undefined);
 				return components;
 			});
@@ -275,19 +254,19 @@ export class SvelteInjector {
 	}
 
 	/**
-	 * Creates, updates and destroys all Svelte internal found as children of domTarget
+	 * Creates, updates and destroys all Svelte components found as children of domTarget
 	 *
 	 * @description The $onChanges function won't be triggered if your INTERNAL state has changed. Only if your component props have.
 	 * If your component uses internal state management, put the above snippet at the end of every state management function.
 	 *
-	 * <i>WARNING: if an angular element with an ng-if has a svelte child, it will create a new component every time the ng-if expression is evaluated to true.
-	 * Use "toRender" prop if you want to reuse the component.</i>
+	 * <i>WARNING: if an HTMLElement that has a svelte child is rendered conditionally, it will create a new component every time the conditional expression is evaluated to true.
+	 * Use "toRender" parameter if you want to reuse the component.</i>
 	 *
-	 * <b>Don't forget</b> to use {@link destroyAll} in your $onDestroy to optimize memory usage
+	 * <b>Don't forget</b> to use {@link destroyAll} to optimize memory usage
 	 *
 	 * @example
-	 *  //1 - Use the funcion in a recurring lifecycle method
-	 *  this.svelteChildren = await SvelteInjector.syncTemplate(this.$element[0]);
+	 *  //1 - Use the function in a recurring lifecycle method
+	 *  this.svelteChildren = await SvelteInjector.syncTemplate(target);
 	 *
 	 * //2 - Use the component in your markup like so:
 	 * <div data-component-name="hello" data-props='{"name": "world"}'></div>
