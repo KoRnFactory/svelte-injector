@@ -1,7 +1,16 @@
-# svelte-injector
+# Svelte Injector
+> Tool to integrate Svelte components into other frontend frameworks
 
-> Tool to integrate svelte components into other frontend frameworks
+> ## Features
+> * <b>Inject</b> Svelte components in React, Angular, Vue, jQuery, Vanilla JS.
+> * Easily <b>migrate</b> to Svelte while keeping older code running.
+> * Write <b>agnostic</b> Svelte components. <i>They will never know what hit them</i>.
+> * Uses <b>Portals</b> to render components where you want them.
+> * The main Svelte App is in your control. Use contexts/store/head/window as you wish.
+> * <b>Typescript</b> <3
 
+
+# Table of contents
 * [Installing](#installing)
 * [Usage](#usage)
   * [Setup](#setup)
@@ -11,13 +20,16 @@
   * [React](#react)
   * [Angular](#angular)  
 * [JS API](#js-api)
+* [Credits](#credits)
 
 
 # Installing
 
 ```sh
-npm install --save-dev svelte-injector
+npm install --save-dev svelte-injector svelte
 ```
+
+Then configure your bundler of choice to accept Svelte files.
 
 # Usage
 ## Setup
@@ -36,7 +48,7 @@ new App({
     target: svelteEntrypoint,
 });
 ```
-Note: since Svelte needs to share the DOM with your existing app you can't use `document.body` as a target.
+<i>Note: Svelte needs to share the DOM with your existing app. It's recommended you don't use `document.body` as the App target.</i>
 
 `App.svelte`
 ```sveltehtml
@@ -168,11 +180,11 @@ If your component uses internal state management, put the above snippet at the e
 <i>WARNING: if an angular element with an ng-if has a svelte child, it will create a new component every time the ng-if expression is evaluated to true.
 Use "toRender" prop if you want to reuse the component.</i>
 
-####1. Use the funcion in a recurring lifecycle method
+#### 1. Use the funcion in a recurring lifecycle method
 ```typescript
 this.svelteChildren = await SvelteInjector.syncTemplate(this.$element[0]);
 ```
-####2. Use the component in your markup like so:
+#### 2. Use the component in your markup like so:
 ```html
 <div data-component-name="hello" data-props='{"name": "world"}'></div>
 
@@ -195,17 +207,17 @@ Docs in progress
 
 # JS API
 
-##Elements
+## Elements
 Interface `SvelteElement`
 ### updateProps(props)
 
-####props `object`
+#### props `object`
 
 The new props object. All previous props will be dropped.
 
 ### updateToRender(toRender)
 
-####toRender `boolean`
+#### toRender `boolean`
 
 The new props object. All previous props will be dropped.
 
@@ -213,26 +225,26 @@ The new props object. All previous props will be dropped.
 
 Destroys the component.
 
-##Injector
+## Injector
 ### createElement(target, Component, props[,toRender])
 
 #### target `HTMLElement`
 
 The element in which the component will be rendered
 
-####Component `SvelteComponent`
+#### Component `SvelteComponent`
 
 The Svelte component Class
 
-####props `object`
+#### props `object`
 
 An object with props compatible with the Svelte Component
 
-####toRender `boolean` (default = true)
+#### toRender `boolean` (default = true)
 
 Boolean that indicates if the component should render immediately.
 
-####RETURN `Promise<SvelteElement>`
+#### RETURN `Promise<SvelteElement>`
 
 A promise that resolves the `SvelteElement` when the component is mounted or created (when toRender = false)
 
@@ -242,20 +254,20 @@ A promise that resolves the `SvelteElement` when the component is mounted or cre
 
 The element in which the component will be rendered
 
-####componentName `string`
+#### componentName `string`
 
 The name of the component as linked with `link()`
 
-####props `object`
+#### props `object`
 
 An object with props compatible with the Svelte Component
 
-####toRender `boolean` (default = true)
+#### toRender `boolean` (default = true)
 
 Boolean that indicates if the component should render immediately
 
 
-####RETURN `Promise<SvelteElement>`
+#### RETURN `Promise<SvelteElement>`
 
 A promise that resolves the `SvelteElement` when the component is mounted or created (when toRender = false)
 
@@ -266,11 +278,15 @@ A promise that resolves the `SvelteElement` when the component is mounted or cre
 
 The element in which the components will be looked for.
 
-####RETURN `Promise<SvelteElement[]>`
+#### RETURN `Promise<SvelteElement[]>`
 
 A promise array for each created component that resolves the `SvelteElement` when the component is mounted or created (when toRender = false)
 
 <i>NOTE: this method is NOT synchronous</i>
+
+# Credits
+* [Svelte](https://svelte.dev/)
+* Portals implementation was inspired by @romkor's work on [svelte-portal](https://github.com/romkor/svelte-portal).
 
 # License
 
