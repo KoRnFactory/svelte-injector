@@ -337,7 +337,7 @@ The new props object. All previous props will be dropped.
 
 #### toRender `boolean`
 
-The new props object. All previous props will be dropped.
+The new props object.
 
 ### destroy()
 
