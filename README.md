@@ -401,6 +401,36 @@ A promise array for each created component that resolves the `SvelteElement` whe
 
 _NOTE: this method is NOT synchronous_
 
+### createElementsFromTemplate(target)
+
+#### target `HTMLElement`
+
+The element in which the components will be looked for.
+
+#### RETURN `Promise<SvelteElement[]>`
+
+A promise array for each created component that resolves the `SvelteElement` when the component is mounted or created (when toRender = false)
+
+### findComponentByName(name)
+
+#### name `string`
+
+name of the component as previously linked with `link()`
+
+#### RETURN `typeof SvelteComponent`
+
+The Class of the linked component, if any
+
+### findLinkNameByClass(Class)
+
+#### Class `typeof SvelteComponent`
+
+Class of the component as previously linked with `link()`
+
+#### RETURN `string`
+
+The name of the linked component, if any
+
 # Credits
 
 - [Svelte](https://svelte.dev/)

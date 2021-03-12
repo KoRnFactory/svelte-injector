@@ -85,7 +85,7 @@ export class SvelteInjector {
 	 * @return - A promise that resolves the {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
 	public static createLinkedElement(domElement: HTMLElement, name: string, props: any, toRender = true): Promise<SvelteElement> {
-		const Component = this.findComponent(name);
+		const Component = this.findComponentByName(name);
 		if (!Component) return Promise.reject();
 		return this._createElement(domElement, Component, props, toRender);
 	}
@@ -143,8 +143,24 @@ export class SvelteInjector {
 		}
 	}
 
-	public static async createElementsFromTemplate(target: HTMLElement): Promise<SvelteElement[]> {
-		const svelteElements = target.querySelectorAll<HTMLElement>("[data-component-name]");
+	/**
+	 * Creates every SvelteElements found querying the target.
+	 * Works like {@link syncTemplate}
+	 *
+	 * @example
+	 * 	this.svelteChildren = await SvelteInjector.createElementsFromTemplate(document.body);
+	 * 	@example Component format
+	 * 	 <div data-component-name="hello" data-props='{"name": "world"}'></div>
+	 *	@example Conditional rendering
+	 *	// You can use {data-to-render} as the condition in an {#if}
+	 *	<div data-component-name="hello" data-props='{"name": "world"}' data-to-render"'true'"></div>
+	 *
+	 * @param domTarget - The DOM Element that will be queried for Svelte Components to create
+	 *
+	 * @return - An array of promises that resolve each {@link SvelteElement} when the component is mounted or created (when toRender = false)
+	 */
+	public static async createElementsFromTemplate(domTarget: HTMLElement): Promise<SvelteElement[]> {
+		const svelteElements = domTarget.querySelectorAll<HTMLElement>("[data-component-name]");
 
 		if (!svelteElements || !svelteElements.length) return [];
 
@@ -163,7 +179,7 @@ export class SvelteInjector {
 	private static createElementFromTemplate(target: HTMLElement): Promise<SvelteElement> {
 		const componentName = target.dataset.componentName;
 		if (!componentName) return Promise.reject();
-		const component = this.findComponent(componentName);
+		const component = this.findComponentByName(componentName);
 		if (!component) return Promise.reject();
 		const props = this.extractProps(target);
 		const toRender = this.extractToRender(target);
@@ -181,8 +197,26 @@ export class SvelteInjector {
 		});
 	}
 
-	private static findComponent(name: string): typeof SvelteComponent | undefined {
+	/**
+	 * Finds a component class from the linked name.
+	 *
+	 * Component must have been previously linked with {@link link}
+	 *
+	 * @param name - name of the component as previously linked with {@link link}
+	 */
+	public static findComponentByName(name: string): typeof SvelteComponent | undefined {
 		return this.links.find((link) => link.name.toLowerCase() === name.toLowerCase())?.svelteComponent;
+	}
+
+	/**
+	 * Finds a component name from the linked Class.
+	 *
+	 * Component must have been previously linked with {@link link}
+	 *
+	 * @param Class - component Class as previously linked with {@link link}
+	 */
+	public static findLinkNameByClass(Class: typeof SvelteComponent): string | undefined {
+		return this.links.find((link) => link.svelteComponent === Class)?.name;
 	}
 
 	private static destroy(component: SvelteElement) {
@@ -265,13 +299,11 @@ export class SvelteInjector {
 	 * <b>Don't forget</b> to use {@link destroyAll} to optimize memory usage
 	 *
 	 * @example
-	 *  //1 - Use the function in a recurring lifecycle method
+	 *  //Use the function in a recurring lifecycle method
 	 *  this.svelteChildren = await SvelteInjector.syncTemplate(target);
-	 *
-	 * //2 - Use the component in your markup like so:
+	 * @example Component format
 	 * <div data-component-name="hello" data-props='{"name": "world"}'></div>
-	 *
-	 * @example conditional rendering
+	 * @example Conditional rendering
 	 * // You can use {data-to-render} as the condition in an {#if}
 	 * <div data-component-name="hello" data-props='{"name": "world"}' data-to-render"'true'"></div>
 	 *
