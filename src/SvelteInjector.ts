@@ -3,7 +3,8 @@ import { SvelteComponent } from "svelte";
 
 interface SvelteLink {
 	name: string;
-	svelteComponent: typeof SvelteComponent;
+	svelteComponent?: typeof SvelteComponent;
+	svelteComponentGetter?: () => Promise<typeof SvelteComponent>;
 }
 
 export interface SvelteElement {
@@ -35,6 +36,8 @@ export class SvelteInjector {
 	static links: SvelteLink[] = [];
 	static lastIndex = -1;
 
+	public static link(name: string, svelteComponent: typeof SvelteComponent): void;
+
 	/**
 	 * Links a component class to a string name.
 	 *
@@ -43,8 +46,20 @@ export class SvelteInjector {
 	 * @param name - name of the component as previously linked with {@link link}
 	 * @param svelteComponent - Svelte component class
 	 */
-	public static link(name: string, svelteComponent: typeof SvelteComponent) {
+	public static link(name: string, svelteComponent: typeof SvelteComponent): void {
 		this.links.push({ name, svelteComponent });
+	}
+
+	/**
+	 * Links an function that returns a component class to a string name.
+	 *
+	 * Useful to create components from the DOM template with {@link createLinkedElement} or {@link syncTemplate}.
+	 *
+	 * @param name - name of the component as previously linked with {@link link}
+	 * @param svelteComponentGetter - Function that resolves a Svelte component class
+	 */
+	public static linkLazy(name: string, svelteComponentGetter: () => Promise<typeof SvelteComponent>): void {
+		this.links.push({ name, svelteComponentGetter });
 	}
 
 	/**
@@ -84,8 +99,8 @@ export class SvelteInjector {
 	 *
 	 * @return - A promise that resolves the {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
-	public static createLinkedElement(domElement: HTMLElement, name: string, props: any, toRender = true): Promise<SvelteElement> {
-		const Component = this.findComponentByName(name);
+	public static async createLinkedElement(domElement: HTMLElement, name: string, props: any, toRender = true): Promise<SvelteElement> {
+		const Component = await this.findComponentByName(name);
 		if (!Component) return Promise.reject();
 		return this._createElement(domElement, Component, props, toRender);
 	}
@@ -176,10 +191,10 @@ export class SvelteInjector {
 		return createdComponents;
 	}
 
-	private static createElementFromTemplate(target: HTMLElement): Promise<SvelteElement> {
+	private static async createElementFromTemplate(target: HTMLElement): Promise<SvelteElement> {
 		const componentName = target.dataset.componentName;
 		if (!componentName) return Promise.reject();
-		const component = this.findComponentByName(componentName);
+		const component = await this.findComponentByName(componentName);
 		if (!component) return Promise.reject();
 		const props = this.extractProps(target);
 		const toRender = this.extractToRender(target);
@@ -200,12 +215,18 @@ export class SvelteInjector {
 	/**
 	 * Finds a component class from the linked name.
 	 *
-	 * Component must have been previously linked with {@link link}
+	 * Component must have been previously linked with {@link link} or {@link linkLazy}
 	 *
-	 * @param name - name of the component as previously linked with {@link link}
+	 * @param name - name of the component as previously linked with {@link link} or {@link linkLazy}
 	 */
-	public static findComponentByName(name: string): typeof SvelteComponent | undefined {
-		return this.links.find((link) => link.name.toLowerCase() === name.toLowerCase())?.svelteComponent;
+	public static async findComponentByName(name: string): Promise<typeof SvelteComponent | undefined> {
+		const link = this.links.find((link) => link.name.toLowerCase() === name.toLowerCase());
+		let component = link?.svelteComponent;
+		if (!component && link?.svelteComponentGetter) {
+			component = await link.svelteComponentGetter();
+			link.svelteComponent = component;
+		}
+		return component;
 	}
 
 	/**
