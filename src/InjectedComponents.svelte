@@ -1,12 +1,13 @@
 <script>
 	import { components } from "./stores";
-	import Portal from "./internal/Portal";
+	import Portal from "./internal/Portal.svelte";
+	import InjectedComponent from "./internal/InjectedComponent.svelte";
 </script>
 
 {#each $components as component}
-	{#if component.toRender}
+	{#if component && component.toRender}
 		<Portal target={component.domElement} onChildMount={() => component.onMount()}>
-			<svelte:component this={component.Component} bind:this={component.instance} {...component.props} />
+			<InjectedComponent {component} />
 		</Portal>
 	{/if}
 {/each}
