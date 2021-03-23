@@ -4,7 +4,7 @@
 	import InjectedComponent from "./internal/InjectedComponent.svelte";
 </script>
 
-{#each $components as component}
+{#each $components as component (component.index)}
 	{#if component && component.toRender}
 		<Portal target={component.domElement} onChildMount={() => component.onMount()}>
 			<InjectedComponent {component} />
