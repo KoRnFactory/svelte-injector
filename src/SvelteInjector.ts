@@ -378,7 +378,7 @@ export class SvelteInjector {
 		if (!propsAttribute) return null;
 
 		if (propsAttribute.startsWith("%")) {
-			propsAttribute = decodeURI(propsAttribute);
+			propsAttribute = decodeURIComponent(propsAttribute);
 		}
 
 		let parsedProps;
