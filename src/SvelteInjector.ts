@@ -396,9 +396,9 @@ export class SvelteInjector {
 		const propsElement = svelteElement.querySelector("template#props");
 		const propsAttribute = svelteElement.dataset.props;
 		let props;
-		if  (propsElement){
+		if (propsElement) {
 			props = propsElement.innerHTML;
-		} else if (propsAttribute){
+		} else if (propsAttribute) {
 			props = propsAttribute;
 		} else return null;
 
