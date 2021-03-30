@@ -393,8 +393,8 @@ export class SvelteInjector {
 	}
 
 	private static extractProps(svelteElement: HTMLElement) {
-		let propsElement = svelteElement.querySelector("template#props");
-		let propsAttribute = svelteElement.dataset.props;
+		const propsElement = svelteElement.querySelector("template#props");
+		const propsAttribute = svelteElement.dataset.props;
 		let props;
 		if  (propsElement){
 			props = propsElement.innerHTML;
