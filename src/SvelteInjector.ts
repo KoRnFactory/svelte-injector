@@ -173,7 +173,7 @@ export class SvelteInjector {
 	 * </div>
 	 * @example Conditional rendering
 	 * // You can use {data-to-render} as the condition in an {#if}
-	 * <div data-component-name="hello" data-to-render"'true'">
+	 * <div data-component-name="hello" data-to-render"true">
 	 *     <template id="props">
 	 *         // JSON formatted
 	 *         {"name": "hello"}
@@ -341,7 +341,7 @@ export class SvelteInjector {
 	 * </div>
 	 * @example Conditional rendering
 	 * // You can use {data-to-render} as the condition in an {#if}
-	 * <div data-component-name="hello" data-to-render"'true'">
+	 * <div data-component-name="hello" data-to-render"true">
 	 *     <template id="props">
 	 *         // JSON formatted
 	 *         {"name": "hello"}

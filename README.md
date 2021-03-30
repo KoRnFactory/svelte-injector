@@ -123,7 +123,7 @@ SvelteInjector.syncTemplate(target);
 You can use `data-to-render` attribute as an `{if}` block in Svelte
 
 ```html
-<div data-component-name="hello" data-to-render"'true'">
+<div data-component-name="hello" data-to-render"true">
   <template id="props">
     <!--JSON formatted-->
     {"name": "hello"}
@@ -243,7 +243,7 @@ this.svelteChildren = await SvelteInjector.syncTemplate(this.$element[0]);
 </div>
 
 Conditional rendering: you can use {data-to-render} as the condition in an {#if}
-<div data-component-name="hello" data-to-render"'true'">
+<div data-component-name="hello" data-to-render"true">
     <template id="props">
         <!--JSON formatted-->
         {"name": "hello"}
