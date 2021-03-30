@@ -165,10 +165,20 @@ export class SvelteInjector {
 	 * @example
 	 * 	this.svelteChildren = await SvelteInjector.createElementsFromTemplate(document.body);
 	 * @example Component format
-	 * 		<div data-component-name="hello" data-props='{"name": "world"}'></div>
+	 * <div data-component-name="hello">
+	 *     <template id="props">
+	 *         // JSON formatted
+	 *         {"name": "hello"}
+	 *     </template>
+	 * </div>
 	 * @example Conditional rendering
-	 * 		You can use {data-to-render} as the condition in an {#if}
-	 * 		<div data-component-name="hello" data-props='{"name": "world"}' data-to-render"'true'"></div>
+	 * // You can use {data-to-render} as the condition in an {#if}
+	 * <div data-component-name="hello" data-to-render"'true'">
+	 *     <template id="props">
+	 *         // JSON formatted
+	 *         {"name": "hello"}
+	 *     </template>
+	 * </div>
 	 *
 	 * @param domTarget - The DOM Element that will be queried for Svelte Components to create
 	 *
@@ -323,10 +333,20 @@ export class SvelteInjector {
 	 *  //Use the function in a recurring lifecycle method
 	 *  this.svelteChildren = await SvelteInjector.syncTemplate(target);
 	 * @example Component format
-	 * <div data-component-name="hello" data-props='{"name": "world"}'></div>
+	 * <div data-component-name="hello">
+	 *     <template id="props">
+	 *         // JSON formatted
+	 *         {"name": "hello"}
+	 *     </template>
+	 * </div>
 	 * @example Conditional rendering
 	 * // You can use {data-to-render} as the condition in an {#if}
-	 * <div data-component-name="hello" data-props='{"name": "world"}' data-to-render"'true'"></div>
+	 * <div data-component-name="hello" data-to-render"'true'">
+	 *     <template id="props">
+	 *         // JSON formatted
+	 *         {"name": "hello"}
+	 *     </template>
+	 * </div>
 	 *
 	 * @param domTarget - The dom element to query for Svelte children to create/update/destroy
 	 *
@@ -373,19 +393,24 @@ export class SvelteInjector {
 	}
 
 	private static extractProps(svelteElement: HTMLElement) {
+		let propsElement = svelteElement.querySelector("template#props");
 		let propsAttribute = svelteElement.dataset.props;
+		let props;
+		if  (propsElement){
+			props = propsElement.innerHTML;
+		} else if (propsAttribute){
+			props = propsAttribute;
+		} else return null;
 
-		if (!propsAttribute) return null;
-
-		if (propsAttribute.startsWith("%")) {
-			propsAttribute = decodeURIComponent(propsAttribute);
+		if (props.startsWith("%")) {
+			props = decodeURIComponent(props);
 		}
 
 		let parsedProps;
 		try {
-			parsedProps = JSON.parse(propsAttribute);
+			parsedProps = JSON.parse(props);
 		} catch (e) {
-			console.warn(
+			console.error(
 				"Malformed props for component:\n",
 				svelteElement,
 				"\nProps should be in valid JSON format. Make sure that all keys are surrounded by double quotes",
@@ -404,7 +429,7 @@ export class SvelteInjector {
 		try {
 			toRender = JSON.parse(toRenderAttribute);
 		} catch (e) {
-			console.warn(
+			console.error(
 				"Malformed toRender for component:\n",
 				svelteElement,
 				"\nToRender should be in valid JSON format. Make sure it is correctly rendered in the DOM",

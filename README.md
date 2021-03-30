@@ -106,7 +106,12 @@ _However for better performance I'd recommend creating a wrapper component in Sv
 Use this notation in the template:
 
 ```html
-<div data-component-name="hello" data-props='{"name": "world"}'></div>
+<div data-component-name="hello">
+  <template id="props">
+    <!--JSON formatted-->
+    {"name": "hello"}
+  </template>
+</div>
 ```
 
 Then call `syncTemplate` to update the components tree in Svelte.
@@ -118,7 +123,12 @@ SvelteInjector.syncTemplate(target);
 You can use `data-to-render` attribute as an `{if}` block in Svelte
 
 ```html
-<div data-component-name="hello" data-props='{"name": "world"}' data-to-render"true"></div>
+<div data-component-name="hello" data-to-render"'true'">
+  <template id="props">
+    <!--JSON formatted-->
+    {"name": "hello"}
+  </template>
+</div>
 ```
 
 ### Backend requested components
@@ -128,7 +138,12 @@ you can create components that are requested in your source HTML.
 If your HTML contains any component markup like so:
 
 ```html
-<div data-component-name="hello" data-props='{"name": "world"}'></div>
+<div data-component-name="hello">
+  <template id="props">
+    <!--JSON formatted-->
+    {"name": "hello"}
+  </template>
+</div>
 ```
 
 Just run `createElementsFromTemplate()` once to render them.
@@ -220,10 +235,20 @@ this.svelteChildren = await SvelteInjector.syncTemplate(this.$element[0]);
 #### 2. Use the component in your markup like so:
 
 ```html
-<div data-component-name="hello" data-props='{"name": "world"}'></div>
+<div data-component-name="hello">
+    <template id="props">
+        <!--JSON formatted-->
+        {"name": "hello"}
+    </template>
+</div>
 
 Conditional rendering: you can use {data-to-render} as the condition in an {#if}
-<div data-component-name="hello" data-props='{"name": "world"}' data-to-render"'true'"></div>
+<div data-component-name="hello" data-to-render"'true'">
+    <template id="props">
+        <!--JSON formatted-->
+        {"name": "hello"}
+    </template>
+</div>
 ```
 
 **Don't forget** to use `destroyAll()` in your `$onDestroy` to optimize memory usage
@@ -308,10 +333,18 @@ this.svelteChildren = await SvelteInjector.syncTemplate(ref);
 #### 2. Use the component in your markup like so:
 
 ```typescript jsx
-<div data-component-name={"hello"} data-props={props}></div>
+<div data-component-name={"hello"}>
+  <template id="props">
+    {JSON.stringify(props)}
+  </template>
+</div>
 
 // Conditional rendering: you can use {data-to-render} as the condition in an {#if}
-<div data-component-name={"hello"} data-props={props} data-to-render={true}></div>
+<div data-component-name={"hello"} data-to-render={true}>
+  <template id="props">
+    {JSON.stringify(props)}
+  </template>
+</div>
 ```
 
 **Don't forget** to use `destroyAll()` in your `componentWillUnmount` to optimize memory usage
