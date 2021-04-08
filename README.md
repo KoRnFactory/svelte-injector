@@ -107,7 +107,7 @@ Use this notation in the template:
 
 ```html
 <div data-component-name="hello">
-  <template id="props">
+  <tempate class="props"">
     <!--JSON formatted-->
     {"name": "hello"}
   </template>
@@ -124,7 +124,7 @@ You can use `data-to-render` attribute as an `{if}` block in Svelte
 
 ```html
 <div data-component-name="hello" data-to-render"true">
-  <template id="props">
+  <tempate class="props"">
     <!--JSON formatted-->
     {"name": "hello"}
   </template>
@@ -139,7 +139,7 @@ If your HTML contains any component markup like so:
 
 ```html
 <div data-component-name="hello">
-  <template id="props">
+  <tempate class="props"">
     <!--JSON formatted-->
     {"name": "hello"}
   </template>
@@ -236,7 +236,7 @@ this.svelteChildren = await SvelteInjector.syncTemplate(this.$element[0]);
 
 ```html
 <div data-component-name="hello">
-    <template id="props">
+    <tempate class="props"">
         <!--JSON formatted-->
         {"name": "hello"}
     </template>
@@ -244,7 +244,7 @@ this.svelteChildren = await SvelteInjector.syncTemplate(this.$element[0]);
 
 Conditional rendering: you can use {data-to-render} as the condition in an {#if}
 <div data-component-name="hello" data-to-render"true">
-    <template id="props">
+    <tempate class="props"">
         <!--JSON formatted-->
         {"name": "hello"}
     </template>
@@ -334,14 +334,14 @@ this.svelteChildren = await SvelteInjector.syncTemplate(ref);
 
 ```typescript jsx
 <div data-component-name={"hello"}>
-  <template id="props">
+  <tempate class="props"">
     {JSON.stringify(props)}
   </template>
 </div>
 
 // Conditional rendering: you can use {data-to-render} as the condition in an {#if}
 <div data-component-name={"hello"} data-to-render={true}>
-  <template id="props">
+  <tempate class="props"">
     {JSON.stringify(props)}
   </template>
 </div>

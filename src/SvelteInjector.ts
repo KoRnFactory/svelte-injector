@@ -166,7 +166,7 @@ export class SvelteInjector {
 	 * 	this.svelteChildren = await SvelteInjector.createElementsFromTemplate(document.body);
 	 * @example Component format
 	 * <div data-component-name="hello">
-	 *     <template id="props">
+	 *     <tempate class="props"">
 	 *         // JSON formatted
 	 *         {"name": "hello"}
 	 *     </template>
@@ -174,7 +174,7 @@ export class SvelteInjector {
 	 * @example Conditional rendering
 	 * // You can use {data-to-render} as the condition in an {#if}
 	 * <div data-component-name="hello" data-to-render"true">
-	 *     <template id="props">
+	 *     <tempate class="props"">
 	 *         // JSON formatted
 	 *         {"name": "hello"}
 	 *     </template>
@@ -334,7 +334,7 @@ export class SvelteInjector {
 	 *  this.svelteChildren = await SvelteInjector.syncTemplate(target);
 	 * @example Component format
 	 * <div data-component-name="hello">
-	 *     <template id="props">
+	 *     <tempate class="props"">
 	 *         // JSON formatted
 	 *         {"name": "hello"}
 	 *     </template>
@@ -342,7 +342,7 @@ export class SvelteInjector {
 	 * @example Conditional rendering
 	 * // You can use {data-to-render} as the condition in an {#if}
 	 * <div data-component-name="hello" data-to-render"true">
-	 *     <template id="props">
+	 *     <tempate class="props"">
 	 *         // JSON formatted
 	 *         {"name": "hello"}
 	 *     </template>
@@ -393,7 +393,7 @@ export class SvelteInjector {
 	}
 
 	private static extractProps(svelteElement: HTMLElement) {
-		const propsElement = svelteElement.querySelector("template#props");
+		const propsElement = svelteElement.querySelector("template.props");
 		const propsAttribute = svelteElement.dataset.props;
 		let props;
 		if (propsElement) {
