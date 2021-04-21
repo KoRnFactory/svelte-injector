@@ -22,15 +22,15 @@ export interface SvelteElement {
 	setToRender(toRender: boolean): void;
 }
 
-export type CreateOptions = {
+export interface CreateOptions {
 	observe?: boolean;
 	observeParents?: boolean;
-};
+}
 
-type Options = {
+interface Options {
 	observe: boolean;
 	observeParents: boolean;
-};
+}
 
 const svelteIndexAttribute = "svelte-element-index";
 
