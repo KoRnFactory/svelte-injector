@@ -392,6 +392,24 @@ export class SvelteInjector {
 		return updatedComponents;
 	}
 
+	/**
+	 * Stringifies and encodes a value for safe DOM usage
+	 *
+	 * @param value
+	 */
+	public static encode(value: any): string {
+		return encodeURIComponent(SvelteInjector.stringify(value));
+	}
+
+	/**
+	 * Stringifies a value for DOM usage, without encoding
+	 *
+	 * @param value
+	 */
+	public static stringify(value: any): string {
+		return JSON.stringify(value);
+	}
+
 	private static extractProps(svelteElement: HTMLElement) {
 		const propsElement = svelteElement.querySelector("template.props");
 		const propsAttribute = svelteElement.dataset.props;
