@@ -14,11 +14,23 @@ export interface SvelteElement {
 	props: any;
 	toRender: boolean;
 	index: number;
+	options: Options;
+	observers?: MutationObserver[];
 	onMount(): void;
 	destroy(): void;
 	updateProps(props: any): void;
 	setToRender(toRender: boolean): void;
 }
+
+export type CreateOptions = {
+	observe?: boolean;
+	observeParents?: boolean;
+};
+
+type Options = {
+	observe: boolean;
+	observeParents: boolean;
+};
 
 const svelteIndexAttribute = "svelte-element-index";
 
@@ -27,7 +39,7 @@ const svelteIndexAttribute = "svelte-element-index";
  *
  * Refer to https://github.com/KoRnFactory/svelte-injector for full documentation
  *
- * To use your component use either {@link createElement}, {@link createLinkedElement} or {@link syncTemplate}.
+ * To use your component use either {@link create} or {@link hydrate}.
  *
  * Have fun!
  *
@@ -35,22 +47,30 @@ const svelteIndexAttribute = "svelte-element-index";
 export class SvelteInjector {
 	static links: SvelteLink[] = [];
 	static lastIndex = -1;
-
-	public static link(name: string, svelteComponent: typeof SvelteComponent): void;
+	private static defaultOptions: Options = {
+		observe: true,
+		observeParents: true,
+	};
 
 	/**
-	 * Links a component class to a string name.
+	 * Links a component class or a function to a string name.
 	 *
-	 * Useful to create components from the DOM template with {@link createLinkedElement} or {@link syncTemplate}.
+	 * Useful to create components from the DOM template with {@link hydrate}.
 	 *
-	 * @param name - name of the component as previously linked with {@link link}
+	 * @param name - name to assign to the component or function {@link link}
 	 * @param svelteComponent - Svelte component class
 	 */
-	public static link(name: string, svelteComponent: typeof SvelteComponent): void {
-		this.links.push({ name, svelteComponent });
+	public static link(name: string, svelteComponent: typeof SvelteComponent | (() => Promise<typeof SvelteComponent>)): void {
+		if (typeof svelteComponent === "function") {
+			this.links.push({ name, svelteComponentGetter: svelteComponent as () => Promise<typeof SvelteComponent> });
+		} else {
+			this.links.push({ name, svelteComponent });
+		}
 	}
 
 	/**
+	 * @deprecated Now {@link link link} supports lazy linking too.
+	 *
 	 * Links an function that returns a component class to a string name.
 	 *
 	 * Useful to create components from the DOM template with {@link createLinkedElement} or {@link syncTemplate}.
@@ -63,6 +83,36 @@ export class SvelteInjector {
 	}
 
 	/**
+	 * Creates a single element at the bottom of an HTML element by component class or link name.
+	 *
+	 * @example
+	 * import Component from "src/Component.svelte"
+	 *
+	 * this.svelteChild = await SvelteInjector.createElement(this.$element[0], Component, props);
+	 *
+	 * @param domElement - The element in which the component will be rendered
+	 * @param component - the svelte component Class or the link name (as previously {@link link linked})
+	 * @param props - An object with props compatible with the Svelte Component
+	 * @param toRender = true - Boolean that indicates if the component should render immediately
+	 * @param options - Object with options, optional
+	 * @return - A promise that resolves the {@link SvelteElement} when the component is mounted or created (when toRender = false)
+	 */
+	public static async create(
+		domElement: HTMLElement,
+		component: typeof SvelteComponent | string,
+		props: any,
+		toRender = true,
+		options = {} as CreateOptions,
+	): Promise<SvelteElement> {
+		if (typeof component === "string") {
+			return this.createLinkedElement(domElement, component, props, toRender, options);
+		} else {
+			return this._createElement(domElement, component, props, toRender, this.sanitizeOptions(options));
+		}
+	}
+
+	/**
+	 * @deprecated use {@link create} instead
 	 * Creates a single element at the bottom of an HTML element by component class.
 	 *
 	 * @example
@@ -74,7 +124,7 @@ export class SvelteInjector {
 	 * @param Component - The Svelte component Class
 	 * @param props - An object with props compatible with the Svelte Component
 	 * @param toRender = true - Boolean that indicates if the component should render immediately
-	 *
+	 * @param options - Object with options, optional
 	 * @return - A promise that resolves the {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
 	public static createElement(
@@ -82,27 +132,36 @@ export class SvelteInjector {
 		Component: typeof SvelteComponent,
 		props: any,
 		toRender = true,
+		options = {} as CreateOptions,
 	): Promise<SvelteElement> {
-		return this._createElement(domElement, Component, props, toRender);
+		return this._createElement(domElement, Component, props, toRender, this.sanitizeOptions(options));
 	}
 
 	/**
+	 * @deprecated use {@link create} instead
 	 * Creates a single element at the bottom of an HTML element by component name.
 	 *
 	 * @example
-	 * 	this.svelteChild = await SvelteInjector.createLinkedElement(this.$element[0], 'hello', props);
+	 *    this.svelteChild = await SvelteInjector.createLinkedElement(this.$element[0], 'hello', props);
 	 *
 	 * @param domElement - The element in which the component will be rendered
 	 * @param name - The Svelte component name as linked into the index module
 	 * @param props - An object with props compatible with the Svelte Component
 	 * @param toRender = true - Boolean that indicates if the component should render immediately
+	 * @param options - Object with options, optional
 	 *
 	 * @return - A promise that resolves the {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
-	public static async createLinkedElement(domElement: HTMLElement, name: string, props: any, toRender = true): Promise<SvelteElement> {
+	public static async createLinkedElement(
+		domElement: HTMLElement,
+		name: string,
+		props: any,
+		toRender = true,
+		options = {} as CreateOptions,
+	): Promise<SvelteElement> {
 		const Component = await this.findComponentByName(name);
 		if (!Component) return Promise.reject();
-		return this._createElement(domElement, Component, props, toRender);
+		return this._createElement(domElement, Component, props, toRender, this.sanitizeOptions(options));
 	}
 
 	private static _createElement(
@@ -110,6 +169,7 @@ export class SvelteInjector {
 		Component: typeof SvelteComponent,
 		props: any,
 		toRender: boolean,
+		options: Options,
 	): Promise<SvelteElement> {
 		return new Promise((resolve, reject) => {
 			if (!Component || !domElement) reject();
@@ -124,11 +184,13 @@ export class SvelteInjector {
 				props,
 				index,
 				toRender,
+				options,
 				onMount() {
+					compData.observers = SvelteInjector.createObservers(compData);
 					resolve(compData);
 				},
 				async destroy() {
-					await SvelteInjector.destroy(compData);
+					await SvelteInjector.destroyElement(compData);
 				},
 				async updateProps(newProps: any) {
 					await SvelteInjector.setProps(compData, newProps);
@@ -158,12 +220,66 @@ export class SvelteInjector {
 		}
 	}
 
+	private static createObservers(svelteElement: SvelteElement): MutationObserver[] {
+		const observers = [];
+		if (svelteElement.options.observeParents) {
+			observers.push(this.createRemoveObserver(svelteElement));
+		}
+		if (svelteElement.options.observe) {
+			observers.push(this.createDataObserver(svelteElement));
+		}
+		return observers;
+	}
+
+	private static createRemoveObserver(svelteElement: SvelteElement): MutationObserver {
+		const observer = new MutationObserver(() => {
+			if (!document.body.contains(svelteElement.domElement)) {
+				svelteElement.destroy();
+			}
+		});
+
+		if (svelteElement.domElement.parentNode) {
+			observer.observe(svelteElement.domElement.parentNode, { childList: true });
+		}
+
+		return observer;
+	}
+
+	private static createDataObserver(svelteElement: SvelteElement): MutationObserver {
+		const observer = new MutationObserver((mutations) => {
+			const haveAttributesChanged = mutations.find((m) => m.type === "attributes");
+			const haveCharactersChanged = mutations.find((m) => m.type === "characterData");
+			if (haveAttributesChanged) {
+				svelteElement.setToRender(this.extractToRender(svelteElement.domElement));
+			}
+			if (haveCharactersChanged) {
+				svelteElement.updateProps(this.extractProps(svelteElement.domElement));
+			}
+		});
+
+		observer.observe(svelteElement.domElement, { attributeFilter: ["data-to-render"] });
+
+		const propsElement = this.getPropsElement(svelteElement.domElement);
+		if (propsElement) {
+			if (propsElement.firstChild) {
+				observer.observe(propsElement.firstChild, { characterData: true });
+			} else {
+				observer.observe(propsElement, { characterData: true, subtree: true });
+			}
+		}
+
+		return observer;
+	}
+
 	/**
+	 * @deprecated Use {@link hydrate} instead.
+	 * Note: {@link hydrate} activates observers by default, but you can disable them.
+	 *
 	 * Creates every SvelteElements found querying the target.
 	 * Works like {@link syncTemplate}
 	 *
 	 * @example
-	 * 	this.svelteChildren = await SvelteInjector.createElementsFromTemplate(document.body);
+	 *    this.svelteChildren = await SvelteInjector.createElementsFromTemplate(document.body);
 	 * @example Component format
 	 * <div data-component-name="hello">
 	 *     <template class="props"">
@@ -181,10 +297,63 @@ export class SvelteInjector {
 	 * </div>
 	 *
 	 * @param domTarget - The DOM Element that will be queried for Svelte Components to create
+	 * @param options - Object with options, optional
 	 *
 	 * @return - An array of promises that resolve each {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
-	public static async createElementsFromTemplate(domTarget: HTMLElement): Promise<SvelteElement[]> {
+	public static async createElementsFromTemplate(domTarget: HTMLElement, options = {} as CreateOptions): Promise<SvelteElement[]> {
+		const svelteElements = domTarget.querySelectorAll<HTMLElement>("[data-component-name]");
+
+		if (!svelteElements || !svelteElements.length) return [];
+
+		const createdComponents = [];
+
+		options.observe = false;
+		options.observeParents = false;
+
+		// @ts-ignore
+		for (const svelteElement of svelteElements) {
+			const createdElement = await this.createElementFromTemplate(svelteElement, this.sanitizeOptions(options));
+			if (createdElement) {
+				createdComponents.push(createdElement);
+			}
+		}
+		return createdComponents;
+	}
+
+	/**
+	 * Hydrates every SvelteElements found querying the target.
+	 *
+	 * @example
+	 *    this.svelteChildren = await SvelteInjector.hydrate(document.body);
+	 * @example Component format
+	 * <div data-component-name="hello">
+	 *     <template class="props"">
+	 *         // JSON formatted
+	 *         {"name": "hello"}
+	 *     </template>
+	 * </div>
+	 * @example Utility
+	 *  <div data-component-name="hello">
+	 *     {SvelteInjector.writeProps(
+	 *     		{name: "hello"}
+	 *     )}
+	 * </div>
+	 * @example Conditional rendering
+	 * // You can use {data-to-render} as the condition in an {#if}
+	 * <div data-component-name="hello" data-to-render"true">
+	 *     <template class="props"">
+	 *         // JSON formatted
+	 *         {"name": "hello"}
+	 *     </template>
+	 * </div>
+	 *
+	 * @param domTarget - The DOM Element that will be queried for Svelte Components to create
+	 * @param options - Object with options, optional
+	 *
+	 * @return - An array of promises that resolve each {@link SvelteElement} when the component is mounted or created (when toRender = false)
+	 */
+	public static async hydrate(domTarget: HTMLElement, options = {} as CreateOptions): Promise<SvelteElement[]> {
 		const svelteElements = domTarget.querySelectorAll<HTMLElement>("[data-component-name]");
 
 		if (!svelteElements || !svelteElements.length) return [];
@@ -193,7 +362,7 @@ export class SvelteInjector {
 
 		// @ts-ignore
 		for (const svelteElement of svelteElements) {
-			const createdElement = await this.createElementFromTemplate(svelteElement);
+			const createdElement = await this.createElementFromTemplate(svelteElement, this.sanitizeOptions(options));
 			if (createdElement) {
 				createdComponents.push(createdElement);
 			}
@@ -201,7 +370,7 @@ export class SvelteInjector {
 		return createdComponents;
 	}
 
-	private static async createElementFromTemplate(target: HTMLElement): Promise<SvelteElement> {
+	private static async createElementFromTemplate(target: HTMLElement, options: CreateOptions): Promise<SvelteElement> {
 		const componentName = target.dataset.componentName;
 		if (!componentName) return Promise.reject();
 		const component = await this.findComponentByName(componentName);
@@ -209,14 +378,24 @@ export class SvelteInjector {
 		const props = this.extractProps(target);
 		const toRender = this.extractToRender(target);
 
-		return this.createElement(target as HTMLElement, component, props, toRender);
+		return this._createElement(target as HTMLElement, component, props, toRender, this.sanitizeOptions(options));
 	}
 
-	public static async getElementFromSvelteIndex(index: string | number): Promise<SvelteElement | undefined> {
+	/**
+	 * @deprecated
+	 * Use {@link findElementByIndex} instead
+	 *
+	 * @param index
+	 */
+	public static async getElementFromSvelteIndex(index: string | number): Promise<SvelteElement | null> {
+		return await this.findElementByIndex(index);
+	}
+
+	public static async findElementByIndex(index: string | number): Promise<SvelteElement | null> {
 		return new Promise((resolve) => {
 			const unsubscribe = components.subscribe((components) => {
 				const element = components.find((component) => component.index.toString() === index.toString());
-				resolve(element);
+				resolve(element ?? null);
 			});
 			unsubscribe();
 		});
@@ -250,8 +429,12 @@ export class SvelteInjector {
 		return this.links.find((link) => link.svelteComponent === Class)?.name;
 	}
 
-	private static destroy(component: SvelteElement) {
+	private static destroyElement(component: SvelteElement) {
 		return new Promise((resolve) => {
+			if (component.observers) {
+				// Disconnect observers
+				component.observers.forEach((obs) => obs.disconnect());
+			}
 			components.update((components) => {
 				const index = components.indexOf(component);
 				components.splice(index, 1);
@@ -294,13 +477,13 @@ export class SvelteInjector {
 		});
 	}
 
-	private static updateComponent(component: SvelteElement) {
+	private static updateComponent(component: SvelteElement): Promise<null> {
 		return new Promise((resolve) => {
 			components.update((components) => {
 				const index = components.indexOf(component);
 				components[index] = component;
 				// window["svelteElements"] = components;
-				resolve(undefined);
+				resolve(null);
 				return components;
 			});
 		});
@@ -319,6 +502,9 @@ export class SvelteInjector {
 	}
 
 	/**
+	 * @deprecated
+	 * Use {@link hydrate} instead
+	 *
 	 * Creates, updates and destroys all Svelte components found as children of domTarget
 	 *
 	 * @description The $onChanges function won't be triggered if your INTERNAL state has changed. Only if your component props have.
@@ -349,10 +535,11 @@ export class SvelteInjector {
 	 * </div>
 	 *
 	 * @param domTarget - The dom element to query for Svelte children to create/update/destroy
+	 * @param options - Object with options, optional
 	 *
 	 * @return - An array of promises that resolve the {@link SvelteElement} when the components are mounted or created (when toRender = false)
 	 */
-	public static async syncTemplate(domTarget: HTMLElement): Promise<SvelteElement[]> {
+	public static async syncTemplate(domTarget: HTMLElement, options = {} as CreateOptions): Promise<SvelteElement[]> {
 		const length = await this.getComponentsNumber();
 
 		const svelteTargets = domTarget.querySelectorAll("[data-component-name]");
@@ -365,7 +552,7 @@ export class SvelteInjector {
 		for (const target of svelteTargets) {
 			if (length > 0 && target.hasAttribute(svelteIndexAttribute)) {
 				// The element has already been created
-				const element = await this.getElementFromSvelteIndex(target.getAttribute(svelteIndexAttribute));
+				const element = await this.findElementByIndex(target.getAttribute(svelteIndexAttribute));
 
 				if (!element) continue;
 
@@ -383,7 +570,7 @@ export class SvelteInjector {
 				}
 			} else {
 				// Need to create new element
-				const createdElement = await this.createElementFromTemplate(target as HTMLElement);
+				const createdElement = await this.createElementFromTemplate(target as HTMLElement, this.sanitizeOptions(options));
 				if (createdElement) {
 					updatedComponents.push(createdElement);
 				}
@@ -395,43 +582,85 @@ export class SvelteInjector {
 	/**
 	 * Stringifies and encodes a value for safe DOM usage
 	 *
+	 * See: {@link decode}
+	 *
 	 * @param value
 	 */
 	public static encode(value: any): string {
-		return encodeURIComponent(SvelteInjector.stringify(value));
+		return encodeURIComponent(this.stringify(value));
+	}
+
+	/**
+	 * Decodes and parses a string encoded with {@link encode}
+	 *
+	 * @param value
+	 */
+	public static decode(value: string): any {
+		return this.parse(decodeURIComponent(value));
 	}
 
 	/**
 	 * Stringifies a value for DOM usage, without encoding
 	 *
+	 * See {@link parse}
+	 *
+	 * @param value
+	 * @param replacer
+	 * @param space
+	 */
+	public static stringify(value: any, replacer = null, space = 2): string {
+		return JSON.stringify(value, replacer, space);
+	}
+
+	/**
+	 * Parses a stringified, not encoded value.
+	 *
+	 * See {@link stringify}
+	 *
 	 * @param value
 	 */
-	public static stringify(value: any): string {
-		return JSON.stringify(value);
+	public static parse(value: string): any {
+		return JSON.parse(value);
+	}
+
+	private static getPropsElement(svelteElement: HTMLElement) {
+		return svelteElement.querySelector("template.props");
+	}
+
+	private static sanitizeOptions(options: CreateOptions, localDefaults = {} as CreateOptions): Options {
+		return { ...this.defaultOptions, ...localDefaults, ...options };
+	}
+
+	/**
+	 * Returns a
+	 *
+	 * @param props
+	 * @param encode
+	 */
+	public static encodeProps(props: any, encode = true): string {
+		const toWrite = encode ? this.encode(props) : this.stringify(props);
+		return `<template class="props">${toWrite}</template>`;
 	}
 
 	private static extractProps(svelteElement: HTMLElement) {
-		const propsElement = svelteElement.querySelector("template.props");
+		const propsElement = this.getPropsElement(svelteElement);
 		const propsAttribute = svelteElement.dataset.props;
-		let props;
-		if (propsElement) {
-			props = propsElement.innerHTML;
-		} else if (propsAttribute) {
-			props = propsAttribute;
-		} else return null;
 
-		if (props.startsWith("%")) {
-			props = decodeURIComponent(props);
-		}
+		const props = propsElement ? propsElement.innerHTML : propsAttribute;
+		if (!props) return null;
 
 		let parsedProps;
 		try {
-			parsedProps = JSON.parse(props);
+			const decode = !!props.includes("%");
+			parsedProps = decode ? this.decode(props) : this.parse(props);
 		} catch (e) {
 			console.error(
 				"Malformed props for component:\n",
 				svelteElement,
-				"\nProps should be in valid JSON format. Make sure that all keys are surrounded by double quotes",
+				"found: ",
+				props,
+				"\nProps should be in valid JSON format. Make sure that all keys are surrounded by double quotes" +
+					"\nUse SvelteInjector.stringify() or SvelteInjector.encode() for automated processing",
 			);
 		}
 
@@ -450,7 +679,9 @@ export class SvelteInjector {
 			console.error(
 				"Malformed toRender for component:\n",
 				svelteElement,
-				"\nToRender should be in valid JSON format. Make sure it is correctly rendered in the DOM",
+				"found: ",
+				toRenderAttribute,
+				"\nToRender attribute should be just true or false. Make sure it is correctly rendered in the DOM",
 			);
 		}
 
