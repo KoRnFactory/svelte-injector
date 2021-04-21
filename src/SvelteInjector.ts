@@ -61,11 +61,15 @@ export class SvelteInjector {
 	 * @param svelteComponent - Svelte component class
 	 */
 	public static link(name: string, svelteComponent: typeof SvelteComponent | (() => Promise<typeof SvelteComponent>)): void {
-		if (typeof svelteComponent === "function") {
-			this.links.push({ name, svelteComponentGetter: svelteComponent as () => Promise<typeof SvelteComponent> });
+		if (this.isClass(svelteComponent)) {
+			this.links.push({ name, svelteComponent: svelteComponent as typeof SvelteComponent });
 		} else {
-			this.links.push({ name, svelteComponent });
+			this.links.push({ name, svelteComponentGetter: svelteComponent as () => Promise<typeof SvelteComponent> });
 		}
+	}
+
+	private static isClass(func: any) {
+		return typeof func === "function" && /^class\s/.test(Function.prototype.toString.call(func));
 	}
 
 	/**
@@ -88,7 +92,7 @@ export class SvelteInjector {
 	 * @example
 	 * import Component from "src/Component.svelte"
 	 *
-	 * this.svelteChild = await SvelteInjector.createElement(this.$element[0], Component, props);
+	 * this.svelteChild = await SvelteInjector.create(this.$element[0], Component, props, options);
 	 *
 	 * @param domElement - The element in which the component will be rendered
 	 * @param component - the svelte component Class or the link name (as previously {@link link linked})
@@ -260,12 +264,8 @@ export class SvelteInjector {
 		observer.observe(svelteElement.domElement, { attributeFilter: ["data-to-render"] });
 
 		const propsElement = this.getPropsElement(svelteElement.domElement);
-		if (propsElement) {
-			if (propsElement.firstChild) {
-				observer.observe(propsElement.firstChild, { characterData: true });
-			} else {
-				observer.observe(propsElement, { characterData: true, subtree: true });
-			}
+		if (propsElement?.content) {
+			observer.observe(propsElement.content, { characterData: true, subtree: true, childList: true });
 		}
 
 		return observer;
@@ -623,8 +623,8 @@ export class SvelteInjector {
 		return JSON.parse(value);
 	}
 
-	private static getPropsElement(svelteElement: HTMLElement) {
-		return svelteElement.querySelector("template.props");
+	private static getPropsElement(svelteElement: HTMLElement): HTMLTemplateElement {
+		return svelteElement.querySelector("template.props") as HTMLTemplateElement;
 	}
 
 	private static sanitizeOptions(options: CreateOptions, localDefaults = {} as CreateOptions): Options {
