@@ -298,7 +298,7 @@ export class SvelteInjector {
 		return new Promise((resolve) => {
 			components.update((components) => {
 				const index = components.indexOf(component);
-				components[index] = {...component};
+				components[index] = component;
 				// window["svelteElements"] = components;
 				resolve(undefined);
 				return components;
