@@ -7,7 +7,7 @@
 {#each $components as component (component.index)}
 	{#if component && component.toRender}
 		<Portal target={component.domElement} onChildMount={() => component.onMount()}>
-			<InjectedComponent {component} />
+			<InjectedComponent {component} props={component.props} />
 		</Portal>
 	{/if}
 {/each}
