@@ -166,7 +166,7 @@ export class SvelteInjector {
 	 * 	this.svelteChildren = await SvelteInjector.createElementsFromTemplate(document.body);
 	 * @example Component format
 	 * <div data-component-name="hello">
-	 *     <tempate class="props"">
+	 *     <template class="props"">
 	 *         // JSON formatted
 	 *         {"name": "hello"}
 	 *     </template>
@@ -174,7 +174,7 @@ export class SvelteInjector {
 	 * @example Conditional rendering
 	 * // You can use {data-to-render} as the condition in an {#if}
 	 * <div data-component-name="hello" data-to-render"true">
-	 *     <tempate class="props"">
+	 *     <template class="props"">
 	 *         // JSON formatted
 	 *         {"name": "hello"}
 	 *     </template>
@@ -334,7 +334,7 @@ export class SvelteInjector {
 	 *  this.svelteChildren = await SvelteInjector.syncTemplate(target);
 	 * @example Component format
 	 * <div data-component-name="hello">
-	 *     <tempate class="props"">
+	 *     <template class="props"">
 	 *         // JSON formatted
 	 *         {"name": "hello"}
 	 *     </template>
@@ -342,7 +342,7 @@ export class SvelteInjector {
 	 * @example Conditional rendering
 	 * // You can use {data-to-render} as the condition in an {#if}
 	 * <div data-component-name="hello" data-to-render"true">
-	 *     <tempate class="props"">
+	 *     <template class="props"">
 	 *         // JSON formatted
 	 *         {"name": "hello"}
 	 *     </template>
