@@ -374,7 +374,10 @@ export class SvelteInjector {
 		const componentName = target.dataset.componentName;
 		if (!componentName) return Promise.reject();
 		const component = await this.findComponentByName(componentName);
-		if (!component) return Promise.reject();
+		if (!component) {
+			console.error("Requested component not found. Did you link it first?", target, componentName)
+			return Promise.reject();
+		}
 		const props = this.extractProps(target);
 		const toRender = this.extractToRender(target);
 
@@ -637,9 +640,12 @@ export class SvelteInjector {
 	 * @param props
 	 * @param encode
 	 */
-	public static encodeProps(props: any, encode = true): string {
-		const toWrite = encode ? this.encode(props) : this.stringify(props);
-		return `<template class="props">${toWrite}</template>`;
+	public static generatePropsBlock(props: any, encode = true): string {
+		return `<template class="props">${this.serializeProps(props, encode)}</template>`;
+	}
+
+	public static serializeProps(props: any, encode = true): string {
+		return encode ? this.encode(props) : this.stringify(props);
 	}
 
 	private static extractProps(svelteElement: HTMLElement) {
