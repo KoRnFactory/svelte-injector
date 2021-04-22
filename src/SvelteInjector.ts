@@ -252,7 +252,20 @@ export class SvelteInjector {
 	private static createDataObserver(svelteElement: SvelteElement): MutationObserver {
 		const observer = new MutationObserver((mutations) => {
 			const haveAttributesChanged = mutations.find((m) => m.type === "attributes");
-			const haveCharactersChanged = mutations.find((m) => m.type === "characterData");
+			const haveCharactersChanged = mutations.find((m) => {
+				if (m.type === "characterData") return true;
+				if (m.type === "childList") {
+					if (m.removedNodes.length !== m.addedNodes.length) return true;
+					let hasChanged = false;
+					m.removedNodes.forEach((node, index) => {
+						if (node.textContent !== m.addedNodes[index].textContent) {
+							hasChanged = true;
+						}
+					});
+					return hasChanged;
+				}
+				return false;
+			});
 			if (haveAttributesChanged) {
 				svelteElement.setToRender(this.extractToRender(svelteElement.domElement));
 			}
@@ -375,7 +388,7 @@ export class SvelteInjector {
 		if (!componentName) return Promise.reject();
 		const component = await this.findComponentByName(componentName);
 		if (!component) {
-			console.error("Requested component not found. Did you link it first?", target, componentName)
+			console.error("Requested component not found. Did you link it first?", target, componentName);
 			return Promise.reject();
 		}
 		const props = this.extractProps(target);
