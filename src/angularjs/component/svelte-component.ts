@@ -5,7 +5,7 @@ class SvelteComponentController {
 	private props: any;
 	toRender: boolean;
 	options: any;
-	$element : any;
+	$element: any;
 	$timeout: any;
 	encode: boolean;
 	onMount: any;
@@ -28,13 +28,13 @@ class SvelteComponentController {
 		this.$timeout(() => {
 			SvelteInjector.hydrate(this.$element.get(0), this.options).then(([element]) => {
 				if (this.onMount) this.onMount({ element });
-			})
-		})
+			});
+		});
 	}
 
 	$onChanges(changes: any) {
-		if(changes.props?.currentValue){
-			if(this.propsElement.content){
+		if (changes.props?.currentValue) {
+			if (this.propsElement.content) {
 				this.propsElement.content.textContent = SvelteInjector.serializeProps(this.props, this.encode);
 			}
 		}
