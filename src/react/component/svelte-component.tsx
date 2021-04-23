@@ -46,6 +46,7 @@ export class SvelteComponent extends React.Component {
 	}
 
 	render() {
+		// @ts-ignore
 		return <div ref={this.rootElementRef} data-component-name={this.props.componentName} data-to-render={this.props.toRender} />;
 	}
 }
