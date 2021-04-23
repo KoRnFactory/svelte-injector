@@ -111,7 +111,7 @@ export class SvelteInjector {
 		if (typeof component === "string") {
 			return this.createLinkedElement(domElement, component, props, toRender, options);
 		} else {
-			return this._createElement(domElement, component, props, toRender, this.sanitizeOptions(options));
+			return this._createElement(domElement, component, props, toRender, this.sanitizeOptions(options, { observe: false }));
 		}
 	}
 
