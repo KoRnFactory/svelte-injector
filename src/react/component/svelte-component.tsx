@@ -1,52 +1,50 @@
-import { SvelteElement, SvelteInjector } from "../../SvelteInjector";
-declare const React: { Component: any; createRef(): any };
+import SvelteInjector, { CreateOptions, SvelteElement } from "../../index";
+import { SvelteComponent as SvelteComponentClass } from "svelte";
+import { Component, createRef, RefObject } from "react";
 
-export interface SvelteComponentProps {
-	componentName: any;
+export type SvelteComponentProps = typeof SvelteComponent.defaultProps & {
+	component: string | typeof SvelteComponentClass;
 	props?: any;
 	toRender?: boolean;
-	options?: any;
-	encode?: boolean;
+	options?: CreateOptions;
 	onMount?: (element: SvelteElement) => void;
-}
+};
 
-export class SvelteComponent extends React.Component {
-	private readonly propsElement: HTMLTemplateElement;
-	private rootElementRef;
+export class SvelteComponent extends Component<SvelteComponentProps, null> {
+	private element: SvelteElement | undefined;
+	rootElementRef: RefObject<HTMLElement>;
+	static defaultProps = {
+		toRender: true,
+	};
 	constructor(props: SvelteComponentProps) {
 		super(props);
-
-		this.props.encode = this.props.encode ?? true;
-		this.props.toRender = this.props.toRender ?? true;
-		this.rootElementRef = React.createRef();
-
-		const propsElement = document.createElement("template");
-		propsElement.className = "props";
-		this.propsElement = propsElement;
+		this.rootElementRef = createRef();
 	}
 
 	componentDidMount() {
-		this.rootElementRef.current.firstChild.appendChild(this.propsElement);
-		SvelteInjector.hydrate(this.rootElementRef.current, this.props.options).then(([element]) => {
-			this.updateProps();
-			if (this.props.onMount) this.props.onMount(element);
-		});
+		if (this.rootElementRef.current) {
+			SvelteInjector.create(
+				this.rootElementRef.current,
+				this.props.component,
+				this.props.props,
+				this.props.toRender,
+				this.props.options,
+			).then((element) => {
+				this.element = element;
+				if (this.props.onMount) this.props.onMount(element);
+			});
+		}
 	}
 
 	componentDidUpdate() {
-		this.updateProps()
-	}
-
-	updateProps(){
-		if (this.props) {
-			if (this.propsElement.content) {
-				this.propsElement.content.textContent = SvelteInjector.serializeProps(this.props.props, this.props.encode);
-			}
+		if (this.element) {
+			this.element.updateProps(this.props.props);
+			this.element.setToRender(this.props.toRender);
 		}
 	}
 
 	render() {
 		// @ts-ignore
-		return <div ref={this.rootElementRef} data-component-name={this.props.componentName} data-to-render={this.props.toRender} />;
+		return <div style={{ display: "contents" }} ref={this.rootElementRef} />;
 	}
 }

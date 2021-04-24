@@ -14,7 +14,10 @@
     "framework",
     "react",
     "components",
-    "portal"
+    "portal",
+    "framework",
+    "migrate",
+    "migration"
   ],
   "author": "Federico Varano",
   "license": "MIT",
@@ -22,11 +25,16 @@
     "url": "https://github.com/KoRnFactory/svelte-injector/issues"
   },
   "devDependencies": {
+    "@types/react": "^17.0.3",
     "cpy-cli": "^3.1.1",
     "cross-env": "^7.0.3",
     "del-cli": "^3.0.1",
+    "exec-sh": "^0.4.0",
+    "inquirer": "^8.0.0",
     "prettier": "^2.2.1",
     "prettier-plugin-svelte": "^2.1.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "svelte": "^3.32.0",
     "svelte-loader": "^3.0.0",
     "ts-loader": "^8.0.14",
@@ -39,7 +47,7 @@
   "homepage": "https://github.com/KoRnFactory/svelte-injector#readme",
   "description": "Tool to integrate svelte components into other frontend frameworks",
   "scripts": {
-    "clean": "del-cli lib",
+    "clean": "del-cli \"lib/**/*\" \"!lib/package.json\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "copy": "cpy **/*.svelte ../lib/ --cwd=src --parents",
     "build": "npm run clean && tsc && npm run copy",
@@ -49,7 +57,8 @@
     "lint": "tslint -p tsconfig.json",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "release": "node ./scripts/release"
   },
   "files": [
     "lib/**/*"
