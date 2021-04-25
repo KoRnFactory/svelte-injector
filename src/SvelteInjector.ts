@@ -49,8 +49,8 @@ const svelteIndexAttribute = "svelte-element-index";
  *
  */
 export class SvelteInjector {
-	static links: SvelteLink[] = [];
-	static lastIndex = -1;
+	private static links: SvelteLink[] = [];
+	private static lastIndex = -1;
 	private static defaultOptions: Options = {
 		observe: true,
 		observeParents: true,
@@ -98,41 +98,15 @@ export class SvelteInjector {
 		options = {} as CreateOptions,
 	): Promise<SvelteElement> {
 		if (typeof component === "string") {
-			return this.createLinkedElement(domElement, component, props, toRender, options);
+			const Component = await this.findComponentByName(component);
+			if (!Component) return Promise.reject();
+			return this.createElement(domElement, Component, props, toRender, this.sanitizeOptions(options));
 		} else {
-			return this._createElement(domElement, component, props, toRender, this.sanitizeOptions(options, { observe: false }));
+			return this.createElement(domElement, component, props, toRender, this.sanitizeOptions(options, { observe: false }));
 		}
 	}
 
-	/**
-	 * @deprecated use {@link create} instead
-	 */
 	private static createElement(
-		domElement: HTMLElement,
-		Component: typeof SvelteComponent,
-		props: any,
-		toRender = true,
-		options = {} as CreateOptions,
-	): Promise<SvelteElement> {
-		return this._createElement(domElement, Component, props, toRender, this.sanitizeOptions(options));
-	}
-
-	/**
-	 * @deprecated use {@link create} instead
-	 */
-	private static async createLinkedElement(
-		domElement: HTMLElement,
-		name: string,
-		props: any,
-		toRender = true,
-		options = {} as CreateOptions,
-	): Promise<SvelteElement> {
-		const Component = await this.findComponentByName(name);
-		if (!Component) return Promise.reject();
-		return this._createElement(domElement, Component, props, toRender, this.sanitizeOptions(options));
-	}
-
-	private static _createElement(
 		domElement: HTMLElement,
 		Component: typeof SvelteComponent,
 		props: any,
@@ -249,29 +223,6 @@ export class SvelteInjector {
 	}
 
 	/**
-	 * @deprecated Use {@link hydrate} instead.
-	 */
-	private static async createElementsFromTemplate(domTarget: HTMLElement, options = {} as CreateOptions): Promise<SvelteElement[]> {
-		const svelteElements = domTarget.querySelectorAll<HTMLElement>("[data-component-name]");
-
-		if (!svelteElements || !svelteElements.length) return [];
-
-		const createdComponents = [];
-
-		// @ts-ignore
-		for (const svelteElement of svelteElements) {
-			const createdElement = await this.createElementFromTemplate(
-				svelteElement,
-				this.sanitizeOptions(options, { observe: false, observeParents: false }),
-			);
-			if (createdElement) {
-				createdComponents.push(createdElement);
-			}
-		}
-		return createdComponents;
-	}
-
-	/**
 	 * Hydrates every SvelteElements found querying the target.
 	 *
 	 * @example
@@ -333,18 +284,10 @@ export class SvelteInjector {
 		const toRender = this.extractToRender(target);
 		target.style.display = "contents";
 
-		return this._createElement(target as HTMLElement, component, props, toRender, this.sanitizeOptions(options));
+		return this.createElement(target as HTMLElement, component, props, toRender, this.sanitizeOptions(options));
 	}
 
-	/**
-	 * @deprecated
-	 * Use {@link findElementByIndex} instead
-	 */
-	private static async getElementFromSvelteIndex(index: string | number): Promise<SvelteElement | null> {
-		return await this.findElementByIndex(index);
-	}
-
-	public static async findElementByIndex(index: string | number): Promise<SvelteElement | null> {
+	private static async findElementByIndex(index: string | number): Promise<SvelteElement | null> {
 		return new Promise((resolve) => {
 			const unsubscribe = components.subscribe((components) => {
 				const element = components.find((component) => component.index.toString() === index.toString());
@@ -452,50 +395,6 @@ export class SvelteInjector {
 			});
 			unsubscribe();
 		});
-	}
-
-	/**
-	 * @deprecated
-	 * Use {@link hydrate} instead
-	 */
-	private static async syncTemplate(domTarget: HTMLElement, options = {} as CreateOptions): Promise<SvelteElement[]> {
-		const length = await this.getComponentsNumber();
-
-		const svelteTargets = domTarget.querySelectorAll("[data-component-name]");
-
-		if (!svelteTargets || !svelteTargets.length) return Promise.resolve([]);
-
-		const updatedComponents = [];
-
-		// @ts-ignore
-		for (const target of svelteTargets) {
-			if (length > 0 && target.hasAttribute(svelteIndexAttribute)) {
-				// The element has already been created
-				const element = await this.findElementByIndex(target.getAttribute(svelteIndexAttribute));
-
-				if (!element) continue;
-
-				if (document.body.contains(element.domElement)) {
-					// Components props should be updated
-					const props = this.extractProps(target as HTMLElement);
-					element.updateProps(props);
-					// Components toRender should be updated
-					const toRender = this.extractToRender(target as HTMLElement);
-					element.setToRender(toRender);
-					updatedComponents.push(element);
-				} else {
-					// Component has been removed from the DOM
-					element.destroy();
-				}
-			} else {
-				// Need to create new element
-				const createdElement = await this.createElementFromTemplate(target as HTMLElement, this.sanitizeOptions(options));
-				if (createdElement) {
-					updatedComponents.push(createdElement);
-				}
-			}
-		}
-		return updatedComponents;
 	}
 
 	/**
