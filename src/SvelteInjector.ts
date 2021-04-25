@@ -57,8 +57,7 @@ export class SvelteInjector {
 	};
 
 	/**
-	 * Links a component class or a function to a string name.
-	 *
+	 * @description Link a component class or a function to a string name.
 	 * Useful to create components from the DOM template with {@link hydrate}.
 	 *
 	 * @param name - name to assign to the component or function {@link link}
@@ -107,21 +106,8 @@ export class SvelteInjector {
 
 	/**
 	 * @deprecated use {@link create} instead
-	 * Creates a single element at the bottom of an HTML element by component class.
-	 *
-	 * @example
-	 * import Component from "src/Component.svelte"
-	 *
-	 * this.svelteChild = await SvelteInjector.createElement(this.$element[0], Component, props);
-	 *
-	 * @param domElement - The element in which the component will be rendered
-	 * @param Component - The Svelte component Class
-	 * @param props - An object with props compatible with the Svelte Component
-	 * @param toRender = true - Boolean that indicates if the component should render immediately
-	 * @param options - Object with options, optional
-	 * @return - A promise that resolves the {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
-	public static createElement(
+	private static createElement(
 		domElement: HTMLElement,
 		Component: typeof SvelteComponent,
 		props: any,
@@ -133,20 +119,8 @@ export class SvelteInjector {
 
 	/**
 	 * @deprecated use {@link create} instead
-	 * Creates a single element at the bottom of an HTML element by component name.
-	 *
-	 * @example
-	 *    this.svelteChild = await SvelteInjector.createLinkedElement(this.$element[0], 'hello', props);
-	 *
-	 * @param domElement - The element in which the component will be rendered
-	 * @param name - The Svelte component name as linked into the index module
-	 * @param props - An object with props compatible with the Svelte Component
-	 * @param toRender = true - Boolean that indicates if the component should render immediately
-	 * @param options - Object with options, optional
-	 *
-	 * @return - A promise that resolves the {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
-	public static async createLinkedElement(
+	private static async createLinkedElement(
 		domElement: HTMLElement,
 		name: string,
 		props: any,
@@ -276,35 +250,8 @@ export class SvelteInjector {
 
 	/**
 	 * @deprecated Use {@link hydrate} instead.
-	 * Note: {@link hydrate} activates observers by default, but you can disable them.
-	 *
-	 * Creates every SvelteElements found querying the target.
-	 * Works like {@link syncTemplate}
-	 *
-	 * @example
-	 *    this.svelteChildren = await SvelteInjector.createElementsFromTemplate(document.body);
-	 * @example Component format
-	 * <div data-component-name="hello">
-	 *     <template class="props"">
-	 *         // JSON formatted
-	 *         {"name": "hello"}
-	 *     </template>
-	 * </div>
-	 * @example Conditional rendering
-	 * // You can use {data-to-render} as the condition in an {#if}
-	 * <div data-component-name="hello" data-to-render"true">
-	 *     <template class="props"">
-	 *         // JSON formatted
-	 *         {"name": "hello"}
-	 *     </template>
-	 * </div>
-	 *
-	 * @param domTarget - The DOM Element that will be queried for Svelte Components to create
-	 * @param options - Object with options, optional
-	 *
-	 * @return - An array of promises that resolve each {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
-	public static async createElementsFromTemplate(domTarget: HTMLElement, options = {} as CreateOptions): Promise<SvelteElement[]> {
+	private static async createElementsFromTemplate(domTarget: HTMLElement, options = {} as CreateOptions): Promise<SvelteElement[]> {
 		const svelteElements = domTarget.querySelectorAll<HTMLElement>("[data-component-name]");
 
 		if (!svelteElements || !svelteElements.length) return [];
@@ -392,10 +339,8 @@ export class SvelteInjector {
 	/**
 	 * @deprecated
 	 * Use {@link findElementByIndex} instead
-	 *
-	 * @param index
 	 */
-	public static async getElementFromSvelteIndex(index: string | number): Promise<SvelteElement | null> {
+	private static async getElementFromSvelteIndex(index: string | number): Promise<SvelteElement | null> {
 		return await this.findElementByIndex(index);
 	}
 
@@ -512,42 +457,8 @@ export class SvelteInjector {
 	/**
 	 * @deprecated
 	 * Use {@link hydrate} instead
-	 *
-	 * Creates, updates and destroys all Svelte components found as children of domTarget
-	 *
-	 * @description The $onChanges function won't be triggered if your INTERNAL state has changed. Only if your component props have.
-	 * If your component uses internal state management, put the above snippet at the end of every state management function.
-	 *
-	 * <i>WARNING: if an HTMLElement that has a svelte child is rendered conditionally, it will create a new component every time the conditional expression is evaluated to true.
-	 * Use "toRender" parameter if you want to reuse the component.</i>
-	 *
-	 * <b>Don't forget</b> to use {@link destroyAll} to optimize memory usage
-	 *
-	 * @example
-	 *  //Use the function in a recurring lifecycle method
-	 *  this.svelteChildren = await SvelteInjector.syncTemplate(target);
-	 * @example Component format
-	 * <div data-component-name="hello">
-	 *     <template class="props"">
-	 *         // JSON formatted
-	 *         {"name": "hello"}
-	 *     </template>
-	 * </div>
-	 * @example Conditional rendering
-	 * // You can use {data-to-render} as the condition in an {#if}
-	 * <div data-component-name="hello" data-to-render"true">
-	 *     <template class="props"">
-	 *         // JSON formatted
-	 *         {"name": "hello"}
-	 *     </template>
-	 * </div>
-	 *
-	 * @param domTarget - The dom element to query for Svelte children to create/update/destroy
-	 * @param options - Object with options, optional
-	 *
-	 * @return - An array of promises that resolve the {@link SvelteElement} when the components are mounted or created (when toRender = false)
 	 */
-	public static async syncTemplate(domTarget: HTMLElement, options = {} as CreateOptions): Promise<SvelteElement[]> {
+	private static async syncTemplate(domTarget: HTMLElement, options = {} as CreateOptions): Promise<SvelteElement[]> {
 		const length = await this.getComponentsNumber();
 
 		const svelteTargets = domTarget.querySelectorAll("[data-component-name]");
@@ -655,9 +566,8 @@ export class SvelteInjector {
 
 	private static extractProps(svelteElement: HTMLElement) {
 		const propsElement = this.getPropsElement(svelteElement);
-		const propsAttribute = svelteElement.dataset.props;
 
-		const props = propsElement ? propsElement.innerHTML : propsAttribute;
+		const props = propsElement.innerHTML;
 		if (!props) return null;
 
 		let parsedProps;
