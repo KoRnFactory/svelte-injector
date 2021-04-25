@@ -23,6 +23,10 @@ export interface SvelteElement {
 }
 
 export interface CreateOptions {
+	observeParents?: boolean;
+}
+
+export interface HydrateOptions {
 	observe?: boolean;
 	observeParents?: boolean;
 }
@@ -70,20 +74,6 @@ export class SvelteInjector {
 
 	private static isClass(func: any) {
 		return typeof func === "function" && /^class\s/.test(Function.prototype.toString.call(func));
-	}
-
-	/**
-	 * @deprecated Now {@link link link} supports lazy linking too.
-	 *
-	 * Links an function that returns a component class to a string name.
-	 *
-	 * Useful to create components from the DOM template with {@link createLinkedElement} or {@link syncTemplate}.
-	 *
-	 * @param name - name of the component as previously linked with {@link link}
-	 * @param svelteComponentGetter - Function that resolves a Svelte component class
-	 */
-	public static linkLazy(name: string, svelteComponentGetter: () => Promise<typeof SvelteComponent>): void {
-		this.links.push({ name, svelteComponentGetter });
 	}
 
 	/**
@@ -321,12 +311,12 @@ export class SvelteInjector {
 
 		const createdComponents = [];
 
-		options.observe = false;
-		options.observeParents = false;
-
 		// @ts-ignore
 		for (const svelteElement of svelteElements) {
-			const createdElement = await this.createElementFromTemplate(svelteElement, this.sanitizeOptions(options));
+			const createdElement = await this.createElementFromTemplate(
+				svelteElement,
+				this.sanitizeOptions(options, { observe: false, observeParents: false }),
+			);
 			if (createdElement) {
 				createdComponents.push(createdElement);
 			}
@@ -366,7 +356,7 @@ export class SvelteInjector {
 	 *
 	 * @return - An array of promises that resolve each {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
-	public static async hydrate(domTarget: HTMLElement, options = {} as CreateOptions): Promise<SvelteElement[]> {
+	public static async hydrate(domTarget: HTMLElement, options = {} as HydrateOptions): Promise<SvelteElement[]> {
 		const svelteElements = domTarget.querySelectorAll<HTMLElement>("[data-component-name]");
 
 		if (!svelteElements || !svelteElements.length) return [];
@@ -383,7 +373,8 @@ export class SvelteInjector {
 		return createdComponents;
 	}
 
-	private static async createElementFromTemplate(target: HTMLElement, options: CreateOptions): Promise<SvelteElement> {
+	private static async createElementFromTemplate(target: HTMLElement, options: CreateOptions): Promise<SvelteElement | null> {
+		if (target.hasAttribute(svelteIndexAttribute)) return null;
 		const componentName = target.dataset.componentName;
 		if (!componentName) return Promise.reject();
 		const component = await this.findComponentByName(componentName);
@@ -393,6 +384,7 @@ export class SvelteInjector {
 		}
 		const props = this.extractProps(target);
 		const toRender = this.extractToRender(target);
+		target.style.display = "contents";
 
 		return this._createElement(target as HTMLElement, component, props, toRender, this.sanitizeOptions(options));
 	}
@@ -420,9 +412,9 @@ export class SvelteInjector {
 	/**
 	 * Finds a component class from the linked name.
 	 *
-	 * Component must have been previously linked with {@link link} or {@link linkLazy}
+	 * Component must have been previously linked with {@link link}
 	 *
-	 * @param name - name of the component as previously linked with {@link link} or {@link linkLazy}
+	 * @param name - name of the component as previously linked with {@link link}
 	 */
 	public static async findComponentByName(name: string): Promise<typeof SvelteComponent | undefined> {
 		const link = this.links.find((link) => link.name.toLowerCase() === name.toLowerCase());
@@ -437,7 +429,7 @@ export class SvelteInjector {
 	/**
 	 * Finds a component name from the linked Class.
 	 *
-	 * Component must have been previously linked with {@link link}
+	 * Component must have been previously linked with {@link link} and instantiated at least once.
 	 *
 	 * @param Class - component Class as previously linked with {@link link}
 	 */
@@ -643,12 +635,12 @@ export class SvelteInjector {
 		return svelteElement.querySelector("template.props") as HTMLTemplateElement;
 	}
 
-	private static sanitizeOptions(options: CreateOptions, localDefaults = {} as CreateOptions): Options {
+	private static sanitizeOptions(options: CreateOptions | HydrateOptions, localDefaults = {} as CreateOptions | HydrateOptions): Options {
 		return { ...this.defaultOptions, ...localDefaults, ...options };
 	}
 
 	/**
-	 * Returns a
+	 * Returns an HTML string representing the props template HTML element.
 	 *
 	 * @param props
 	 * @param encode

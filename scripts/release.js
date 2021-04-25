@@ -71,23 +71,19 @@ async function release() {
     // Copy dependencies
     childPkg.dependencies = pkg.dependencies;
 
-    // fs.writeFileSync(path.resolve(__dirname, '../package.json'), JSON.stringify(pkg, null, 2));
+    fs.writeFileSync(path.resolve(__dirname, '../package.json'), JSON.stringify(pkg, null, 2));
     fs.writeFileSync(path.resolve(__dirname, '../package-child.json'), JSON.stringify(childPkg, null, 2));
 
-    await exec.promise(`npm version ${pkg.version}`)
+    fs.copyFileSync(path.resolve(__dirname, '../package-child.json'),  path.resolve(__dirname, `../${packageFolder}/package.json`))
 
-    fs.writeFileSync(
-        path.resolve(__dirname, `../${packageFolder}/package.json`),
-        JSON.stringify(childPkg, null, 2),
-    );
-    // await exec.promise('git pull');
-    // await exec.promise('npm i');
-    // await exec.promise(`npm run build`);
-    // await exec.promise('git add .');
-    // await exec.promise(`git commit -m "${pkg.version} release"`);
-    // await exec.promise('git push');
-    // await exec.promise(`git tag v${pkg.version}`);
-    // await exec.promise('git push origin --tags');
+    await exec.promise('git pull');
+    await exec.promise('npm i');
+    await exec.promise(`npm run build`);
+    await exec.promise('git add .');
+    await exec.promise(`git commit -m \"${pkg.version} release\"`);
+    await exec.promise('git push');
+    await exec.promise(`git tag v${pkg.version}`);
+    await exec.promise('git push origin --tags');
     //
     // if (options.beta) {
     //     await exec.promise(`cd ./${packageFolder} && npm publish --tag beta`);
