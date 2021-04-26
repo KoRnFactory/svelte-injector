@@ -72,7 +72,7 @@ Use `svelte-loader` or `rollup-plugin-svelte` in your bundler. Make sure you are
 ## Injecting Components
 
 ### Creating
-####Imported components
+#### Imported components
 
 Import the component class into your framework controller, then use `create()`.
 
