@@ -47,7 +47,7 @@
   "homepage": "https://github.com/KoRnFactory/svelte-injector#readme",
   "description": "Tool to integrate svelte components into other frontend frameworks",
   "scripts": {
-    "clean": "del-cli \"lib/**/*\" \"!lib/package.json\"",
+    "clean": "del-cli \"lib/**/*\" \"!lib/package.json\" \"!lib/*.md\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "copy": "cpy **/*.svelte ../lib/ --cwd=src --parents",
     "build": "npm run clean && tsc && npm run copy",
