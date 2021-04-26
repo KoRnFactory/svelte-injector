@@ -184,6 +184,18 @@ Now in any AngularJS component you can use:
 <svelte-component component="component-name" props="$ctrl.svelteProps"/>
 ```
 
+### Bindings:
+```typescript
+const bindings = {
+  componentName: "@",
+  props: "<",
+  toRender: "<",
+  options: "<",
+  encode: "<",
+  onMount: "&",
+}
+```
+
 
 ## React
 
@@ -208,6 +220,17 @@ function YourComponent(props){
 function YourComponent(props){
   return <SvelteComponent component={"hello"} props={{name: "world"}} to-render={props.render}/>
 }
+```
+
+### Props:
+```typescript
+export type SvelteComponentProps = {
+	component: string | typeof SvelteComponentClass;
+	props?: any;
+	toRender?: boolean;
+	options?: CreateOptions;
+	onMount?: (element: SvelteElement) => void;
+};
 ```
 
 
