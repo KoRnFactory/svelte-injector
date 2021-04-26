@@ -450,15 +450,21 @@ export class SvelteInjector {
 	}
 
 	/**
-	 * Returns an HTML string representing the props template HTML element.
+	 * Returns an HTML string representing the props template HTML element, as expected from {@link hydrate}.
 	 *
-	 * @param props
-	 * @param encode
+	 * @param props - props object
+	 * @param encode = true - apply encoding?
 	 */
 	public static generatePropsBlock(props: any, encode = true): string {
 		return `<template class="props">${this.serializeProps(props, encode)}</template>`;
 	}
 
+	/**
+	 * Returns stringified (and encoded?) string from an object, as expected from the parser.
+	 *
+	 * @param props - object
+	 * @param encode = true- apply encoding?
+	 */
 	public static serializeProps(props: any, encode = true): string {
 		return encode ? this.encode(props) : this.stringify(props);
 	}
