@@ -184,7 +184,7 @@ Now in any AngularJS component you can use:
 <svelte-component component="component-name" props="$ctrl.svelteProps"/>
 ```
 
-### Bindings:
+#### Bindings:
 ```typescript
 const bindings = {
   componentName: "@",
@@ -222,7 +222,7 @@ function YourComponent(props){
 }
 ```
 
-### Props:
+#### Props:
 ```typescript
 export type SvelteComponentProps = {
 	component: string | typeof SvelteComponentClass;
