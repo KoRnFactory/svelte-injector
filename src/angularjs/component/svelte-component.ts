@@ -1,4 +1,4 @@
-import { SvelteInjector } from "../../SvelteInjector";
+import { SvelteElement, SvelteInjector } from "../../SvelteInjector";
 
 class SvelteComponentController {
 	componentName: any;
@@ -9,6 +9,7 @@ class SvelteComponentController {
 	$timeout: any;
 	encode: boolean;
 	onMount: any;
+	private element: SvelteElement | undefined;
 	private propsElement: HTMLTemplateElement;
 
 	constructor($element: any, $timeout: any) {
@@ -27,6 +28,7 @@ class SvelteComponentController {
 		this.$element.get(0).firstChild.appendChild(this.propsElement);
 		this.$timeout(() => {
 			SvelteInjector.hydrate(this.$element.get(0), this.options).then(([element]) => {
+				this.element = element;
 				if (this.onMount) this.onMount({ element });
 			});
 		});
@@ -39,8 +41,34 @@ class SvelteComponentController {
 			}
 		}
 	}
+
+	$onDestroy() {
+		this.element?.destroy();
+	}
 }
 
+/**
+ * @description
+ * AngularJS Component for svelte-injector
+ *
+ * **Bindings:**
+ *
+ * componentName: "@" - link name
+ *
+ * props: "<" - props object
+ *
+ * toRender: "<" (default: true)
+ *
+ * options: "<" (default: HydrateOptions)
+ *
+ * encode: "<" (default: true)
+ *
+ * onMount: "&" - function called with on mount with parameters: *element*
+ *
+ * @example
+ * <svelte-component component-name="hello" props"$ctrl.svelteProps" on-mount="setChildElement(element)"></svelte-component>
+ *
+ */
 export const svelteComponent = {
 	template: `<div data-component-name="{{$ctrl.componentName}}" data-to-render="{{$ctrl.toRender}}"></div>`,
 	controller: SvelteComponentController,

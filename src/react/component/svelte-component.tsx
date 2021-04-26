@@ -1,6 +1,6 @@
 import SvelteInjector, { CreateOptions, SvelteElement } from "../../index";
 import { SvelteComponent as SvelteComponentClass } from "svelte";
-import { Component, createRef, RefObject } from "react";
+import React, { Component, createRef, RefObject } from "react";
 
 export type SvelteComponentProps = typeof SvelteComponent.defaultProps & {
 	component: string | typeof SvelteComponentClass;
@@ -10,9 +10,29 @@ export type SvelteComponentProps = typeof SvelteComponent.defaultProps & {
 	onMount?: (element: SvelteElement) => void;
 };
 
+/**
+ * @description
+ * React Component for svelte-injector
+ *
+ * **Props:**
+ *
+ * component - component class or link name
+ *
+ * props - props object
+ *
+ * toRender (default: true)
+ *
+ * options (default: CreateOptions)
+ *
+ * onMount - function called with on mount with parameters: *element*
+ *
+ * @example
+ * <SvelteComponent component={Component | "hello"} props={{name: "world"}}/>
+ *
+ */
 export class SvelteComponent extends Component<SvelteComponentProps, null> {
 	private element: SvelteElement | undefined;
-	rootElementRef: RefObject<HTMLElement>;
+	rootElementRef: RefObject<HTMLDivElement>;
 	static defaultProps = {
 		toRender: true,
 	};
@@ -44,7 +64,6 @@ export class SvelteComponent extends Component<SvelteComponentProps, null> {
 	}
 
 	render() {
-		// @ts-ignore
 		return <div style={{ display: "contents" }} ref={this.rootElementRef} />;
 	}
 }

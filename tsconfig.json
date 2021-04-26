@@ -6,7 +6,8 @@
     "sourceMap": false,
     "outDir": "./lib",
     "strict": true,
-    "jsx": "react"
+    "jsx": "react",
+    "allowSyntheticDefaultImports": true
   },
   "include": ["src"],
   "exclude": [
