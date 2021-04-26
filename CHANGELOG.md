@@ -1,4 +1,7 @@
 # 2.0.1
+- Fixed lookup for props block if not available
+
+# 2.0.1
 - Updated Docs
 
 # 2.0.0
