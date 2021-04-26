@@ -173,9 +173,9 @@ SvelteInjector.link("component-name", Component);
 ```typescript
 // /angularjs/index.module.ts
 
-import { SvelteComponent } from "svelte-injector/angularjs";
+import { svelteComponent } from "svelte-injector/angularjs";
 
-angular.component("svelteComponent", SvelteComponent);
+angular.component("svelteComponent", svelteComponent);
 ```
 
 Now in any AngularJS component you can use:
