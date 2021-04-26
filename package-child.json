@@ -1,0 +1,29 @@
+{
+  "name": "svelte-injector",
+  "version": "2.0.0-alpha.3",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KoRnFactory/svelte-injector.git"
+  },
+  "keywords": [
+    "svelte",
+    "injector",
+    "angularjs",
+    "framework",
+    "react",
+    "components",
+    "portal",
+    "framework",
+    "migrate",
+    "migration"
+  ],
+  "author": "Federico Varano",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/KoRnFactory/svelte-injector/issues"
+  },
+  "homepage": "https://github.com/KoRnFactory/svelte-injector#readme",
+  "description": "Tool to integrate svelte components into other frontend frameworks"
+}
