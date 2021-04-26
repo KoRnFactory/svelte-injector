@@ -75,6 +75,7 @@ async function release() {
     fs.writeFileSync(path.resolve(__dirname, '../package-child.json'), JSON.stringify(childPkg, null, 2));
 
     fs.copyFileSync(path.resolve(__dirname, '../package-child.json'),  path.resolve(__dirname, `../${packageFolder}/package.json`))
+    fs.copyFileSync(path.resolve(__dirname, '../README.md'),  path.resolve(__dirname, `../${packageFolder}/README.md`))
 
     await exec.promise('git pull');
     await exec.promise('npm i');

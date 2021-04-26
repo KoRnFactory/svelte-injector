@@ -470,9 +470,7 @@ export class SvelteInjector {
 	}
 
 	private static extractProps(svelteElement: HTMLElement) {
-		const propsElement = this.getPropsElement(svelteElement);
-
-		const props = propsElement.innerHTML;
+		const props = this.getPropsElement(svelteElement)?.innerHTML;
 		if (!props) return null;
 
 		let parsedProps;
