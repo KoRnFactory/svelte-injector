@@ -25,9 +25,11 @@ class SvelteComponentController {
 	}
 
 	$onInit() {
-		this.$element.get(0).firstChild.appendChild(this.propsElement);
+		const rootElement = this.$element.get(0);
+		rootElement.style.display = "contents";
+		rootElement.firstChild.appendChild(this.propsElement);
 		this.$timeout(() => {
-			SvelteInjector.hydrate(this.$element.get(0), this.options).then(([element]) => {
+			SvelteInjector.hydrate(rootElement, this.options).then(([element]) => {
 				this.element = element;
 				if (this.onMount) this.onMount({ element });
 			});
