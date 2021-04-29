@@ -187,12 +187,12 @@ Now in any AngularJS component you can use:
 #### Bindings:
 ```typescript
 const bindings = {
-  componentName: "@",
-  props: "<",
-  toRender: "<",
-  options: "<",
-  encode: "<",
-  onMount: "&",
+  component: "@", // Link name
+  props: "?<", // Props object
+  toRender: "?<", // Ng-if
+  options: "?<", // HydrateOptions
+  encode: "?<", // encode props?
+  onMount: "?&", // Function called with "element" param on mount
 }
 ```
 
@@ -202,7 +202,6 @@ const bindings = {
 Use the ***built-in React component***.
 
 ```jsx
-import SvelteInjector from "svelte-injector";
 import { SvelteComponent } from "svelte-injector/react"
 
 // Using the class

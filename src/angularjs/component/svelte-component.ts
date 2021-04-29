@@ -1,7 +1,8 @@
 import { SvelteElement, SvelteInjector } from "../../SvelteInjector";
 
 class SvelteComponentController {
-	componentName: any;
+	component: string | undefined;
+	componentName: string | undefined;
 	private props: any;
 	toRender: boolean;
 	options: any;
@@ -55,7 +56,9 @@ class SvelteComponentController {
  *
  * **Bindings:**
  *
- * componentName: "@" - link name
+ * component: "@" - link name
+ *
+ * componentName: "@" - alias for component
  *
  * props: "<" - props object
  *
@@ -72,9 +75,10 @@ class SvelteComponentController {
  *
  */
 export const svelteComponent = {
-	template: `<div data-component-name="{{$ctrl.componentName}}" data-to-render="{{$ctrl.toRender}}"></div>`,
+	template: `<div data-component-name="{{$ctrl.component || $ctrl.componentName}}" data-to-render="{{$ctrl.toRender}}"></div>`,
 	controller: SvelteComponentController,
 	bindings: {
+		component: "@",
 		componentName: "@",
 		props: "<",
 		toRender: "<",
