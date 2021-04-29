@@ -3,6 +3,7 @@ import { SvelteElement, SvelteInjector } from "../../SvelteInjector";
 class SvelteComponentController {
 	component: string | undefined;
 	componentName: string | undefined;
+	name: string | undefined;
 	private props: any;
 	toRender: boolean;
 	options: any;
@@ -26,6 +27,7 @@ class SvelteComponentController {
 	}
 
 	$onInit() {
+		this.name = this.component || this.componentName;
 		const rootElement = this.$element.get(0);
 		rootElement.style.display = "contents";
 		rootElement.firstChild.appendChild(this.propsElement);
@@ -75,7 +77,7 @@ class SvelteComponentController {
  *
  */
 export const svelteComponent = {
-	template: `<div data-component-name="{{$ctrl.component || $ctrl.componentName}}" data-to-render="{{$ctrl.toRender}}"></div>`,
+	template: `<div data-component-name="{{$ctrl.name}}" data-to-render="{{$ctrl.toRender}}"></div>`,
 	controller: SvelteComponentController,
 	bindings: {
 		component: "@",
