@@ -7,18 +7,13 @@ class SvelteComponentController {
 	private props: any;
 	toRender: boolean;
 	options: any;
-	$element: any;
-	$timeout: any;
 	encode: boolean;
 	onMount: any;
 	private element: SvelteElement | undefined;
 	private propsElement: HTMLTemplateElement;
 
-	constructor($element: any, $timeout: any) {
-		"ngInject";
-		this.$element = $element;
-		this.$timeout = $timeout;
-
+	static $inject = ["$element", "$timeout"];
+	constructor(private $element: any, private $timeout: any) {
 		this.encode = true;
 		this.toRender = true;
 		const propsElement = document.createElement("template");
@@ -77,7 +72,7 @@ class SvelteComponentController {
  *
  */
 export const svelteComponent = {
-	template: `<div data-component-name="{{$ctrl.name}}" data-to-render="{{$ctrl.toRender}}"></div>`,
+	template: `<div data-component-name="{{$ctrl.component || $ctrl.componentName}}" data-to-render="{{$ctrl.toRender}}"></div>`,
 	controller: SvelteComponentController,
 	bindings: {
 		component: "@",
