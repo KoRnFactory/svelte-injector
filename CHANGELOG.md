@@ -1,4 +1,7 @@
-# 2.0.1
+# 2.0.7
+- Fix: Dependency injection in AngularJs component when minified
+
+# 2.0.2
 - Fixed lookup for props block if not available
 
 # 2.0.1
