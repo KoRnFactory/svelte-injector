@@ -16,10 +16,12 @@ export interface SvelteElement {
 	index: number;
 	options: Options;
 	observers?: MutationObserver[];
+	slots: Slot[];
 	onMount(): void;
 	destroy(): void;
 	updateProps(props: any): void;
 	setToRender(toRender: boolean): void;
+	updateSlot(slotName: string | undefined, slotContent: string): void;
 }
 
 export interface CreateOptions {
@@ -29,6 +31,11 @@ export interface CreateOptions {
 export interface HydrateOptions {
 	observe?: boolean;
 	observeParents?: boolean;
+}
+
+interface Slot {
+	name: string | undefined;
+	value: string;
 }
 
 interface Options {
@@ -100,9 +107,9 @@ export class SvelteInjector {
 		if (typeof component === "string") {
 			const Component = await this.findComponentByName(component);
 			if (!Component) return Promise.reject();
-			return this.createElement(domElement, Component, props, toRender, this.sanitizeOptions(options));
+			return this.createElement(domElement, Component, props, toRender, [], this.sanitizeOptions(options));
 		} else {
-			return this.createElement(domElement, component, props, toRender, this.sanitizeOptions(options, { observe: false }));
+			return this.createElement(domElement, component, props, toRender, [], this.sanitizeOptions(options, { observe: false }));
 		}
 	}
 
@@ -111,6 +118,7 @@ export class SvelteInjector {
 		Component: typeof SvelteComponent,
 		props: any,
 		toRender: boolean,
+		slots: Slot[],
 		options: Options,
 	): Promise<SvelteElement> {
 		return new Promise((resolve, reject) => {
@@ -126,6 +134,7 @@ export class SvelteInjector {
 				props,
 				index,
 				toRender,
+				slots,
 				options,
 				onMount() {
 					compData.observers = SvelteInjector.createObservers(compData);
@@ -139,6 +148,9 @@ export class SvelteInjector {
 				},
 				async setToRender(toRender: boolean) {
 					await SvelteInjector.setToRender(compData, toRender);
+				},
+				async updateSlot(slotName, slotContent) {
+					await SvelteInjector.setSlot(compData, slotName, slotContent);
 				},
 			};
 
@@ -162,6 +174,16 @@ export class SvelteInjector {
 		}
 	}
 
+	private static async setSlot(component: SvelteElement, slotName: string | undefined, slotContent: string) {
+		let slotObject = component.slots.find((slot) => slot.name === slotName);
+		if (!slotObject) {
+			slotObject = { name: slotName, value: "" };
+			component.slots.push(slotObject);
+		}
+		slotObject.value = slotContent;
+		await this.updateComponent(component);
+	}
+
 	private static createObservers(svelteElement: SvelteElement): MutationObserver[] {
 		const observers = [];
 		if (svelteElement.options.observeParents) {
@@ -170,7 +192,10 @@ export class SvelteInjector {
 		if (svelteElement.options.observe) {
 			observers.push(this.createDataObserver(svelteElement));
 		}
-		return observers;
+
+		const slotObservers = svelteElement.slots.map((slot) => this.createSlotObserver(svelteElement, slot.name));
+
+		return [...observers, ...slotObservers];
 	}
 
 	private static createRemoveObserver(svelteElement: SvelteElement): MutationObserver {
@@ -189,25 +214,10 @@ export class SvelteInjector {
 
 	private static createDataObserver(svelteElement: SvelteElement): MutationObserver {
 		const observer = new MutationObserver((mutations) => {
-			const haveAttributesChanged = mutations.find((m) => m.type === "attributes");
-			const haveCharactersChanged = mutations.find((m) => {
-				if (m.type === "characterData") return true;
-				if (m.type === "childList") {
-					if (m.removedNodes.length !== m.addedNodes.length) return true;
-					let hasChanged = false;
-					m.removedNodes.forEach((node, index) => {
-						if (node.textContent !== m.addedNodes[index].textContent) {
-							hasChanged = true;
-						}
-					});
-					return hasChanged;
-				}
-				return false;
-			});
-			if (haveAttributesChanged) {
+			if (this.haveAttributesChanged(mutations)) {
 				svelteElement.setToRender(this.extractToRender(svelteElement.domElement));
 			}
-			if (haveCharactersChanged) {
+			if (this.haveCharactersChanged(mutations)) {
 				svelteElement.updateProps(this.extractProps(svelteElement.domElement));
 			}
 		});
@@ -220,6 +230,45 @@ export class SvelteInjector {
 		}
 
 		return observer;
+	}
+
+	private static createSlotObserver(svelteElement: SvelteElement, slotName: string | undefined): MutationObserver {
+		const observer = new MutationObserver((mutations) => {
+			if (this.haveCharactersChanged(mutations)) {
+				const { name, value } = this.extractSlot(svelteElement.domElement, slotName);
+				svelteElement.updateSlot(name, value);
+			}
+		});
+
+		observer.observe(svelteElement.domElement, { attributeFilter: ["data-to-render"] });
+
+		const slotElement = this.getSlotElement(svelteElement.domElement, slotName);
+		if (slotElement?.content) {
+			observer.observe(slotElement.content, { characterData: true, subtree: true, childList: true });
+		}
+
+		return observer;
+	}
+
+	private static haveAttributesChanged(mutations: MutationRecord[]): boolean {
+		return !!mutations.find((m) => m.type === "attributes");
+	}
+
+	private static haveCharactersChanged(mutations: MutationRecord[]): boolean {
+		return !!mutations.find((m) => {
+			if (m.type === "characterData") return true;
+			if (m.type === "childList") {
+				if (m.removedNodes.length !== m.addedNodes.length) return true;
+				let hasChanged = false;
+				m.removedNodes.forEach((node, index) => {
+					if (node.textContent !== m.addedNodes[index].textContent) {
+						hasChanged = true;
+					}
+				});
+				return hasChanged;
+			}
+			return false;
+		});
 	}
 
 	/**
@@ -282,9 +331,10 @@ export class SvelteInjector {
 		}
 		const props = this.extractProps(target);
 		const toRender = this.extractToRender(target);
+		const slots = this.extractSlots(target);
 		target.style.display = "contents";
 
-		return this.createElement(target as HTMLElement, component, props, toRender, this.sanitizeOptions(options));
+		return this.createElement(target as HTMLElement, component, props, toRender, slots, this.sanitizeOptions(options));
 	}
 
 	private static async findElementByIndex(index: string | number): Promise<SvelteElement | null> {
@@ -445,6 +495,15 @@ export class SvelteInjector {
 		return svelteElement.querySelector("template.props") as HTMLTemplateElement;
 	}
 
+	private static getSlotElement(svelteElement: HTMLElement, slotName: string | undefined): HTMLTemplateElement {
+		const slotElements = Array.from(svelteElement.querySelectorAll(`template[data-slot]`)) as HTMLTemplateElement[];
+		return slotElements.find((slotElement) => slotElement.dataset.slot === slotName) as HTMLTemplateElement;
+	}
+
+	private static getSlotElements(svelteElement: HTMLElement): HTMLTemplateElement[] {
+		return Array.from(svelteElement.querySelectorAll(`template[data-slot]`)) as HTMLTemplateElement[];
+	}
+
 	private static sanitizeOptions(options: CreateOptions | HydrateOptions, localDefaults = {} as CreateOptions | HydrateOptions): Options {
 		return { ...this.defaultOptions, ...localDefaults, ...options };
 	}
@@ -489,6 +548,18 @@ export class SvelteInjector {
 		}
 
 		return parsedProps;
+	}
+
+	private static extractSlots(svelteElement: HTMLElement): Slot[] {
+		const slots = this.getSlotElements(svelteElement);
+		return slots.map((slot) => {
+			return { name: slot.dataset.slot, value: slot.innerHTML };
+		});
+	}
+
+	private static extractSlot(svelteElement: HTMLElement, slotName: string | undefined): Slot {
+		const slots = this.extractSlots(svelteElement);
+		return slots.find((slot) => slot.name === slotName) ?? { name: slotName, value: "" };
 	}
 
 	private static extractToRender(svelteElement: HTMLElement) {
