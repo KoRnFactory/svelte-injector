@@ -16,12 +16,12 @@ export interface SvelteElement {
 	index: number;
 	options: Options;
 	observers?: MutationObserver[];
-	slots: Slot[];
+	slots: SlotObject;
 	onMount(): void;
 	destroy(): void;
 	updateProps(props: any): void;
 	setToRender(toRender: boolean): void;
-	updateSlot(slotName: string | undefined, slotContent: string): void;
+	updateSlot(slotContent: string, slotName: string | undefined): void;
 }
 
 export interface CreateOptions {
@@ -33,9 +33,8 @@ export interface HydrateOptions {
 	observeParents?: boolean;
 }
 
-interface Slot {
-	name: string | undefined;
-	value: string;
+interface SlotObject {
+	[key: string]: string
 }
 
 interface Options {
@@ -107,9 +106,9 @@ export class SvelteInjector {
 		if (typeof component === "string") {
 			const Component = await this.findComponentByName(component);
 			if (!Component) return Promise.reject();
-			return this.createElement(domElement, Component, props, toRender, [], this.sanitizeOptions(options));
+			return this.createElement(domElement, Component, props, toRender, {}, this.sanitizeOptions(options));
 		} else {
-			return this.createElement(domElement, component, props, toRender, [], this.sanitizeOptions(options, { observe: false }));
+			return this.createElement(domElement, component, props, toRender, {}, this.sanitizeOptions(options, { observe: false }));
 		}
 	}
 
@@ -118,7 +117,7 @@ export class SvelteInjector {
 		Component: typeof SvelteComponent,
 		props: any,
 		toRender: boolean,
-		slots: Slot[],
+		slots: SlotObject,
 		options: Options,
 	): Promise<SvelteElement> {
 		return new Promise((resolve, reject) => {
@@ -149,8 +148,8 @@ export class SvelteInjector {
 				async setToRender(toRender: boolean) {
 					await SvelteInjector.setToRender(compData, toRender);
 				},
-				async updateSlot(slotName, slotContent) {
-					await SvelteInjector.setSlot(compData, slotName, slotContent);
+				async updateSlot(slotContent, slotName = "default") {
+					await SvelteInjector.setSlot(compData, slotContent, slotName);
 				},
 			};
 
@@ -174,13 +173,8 @@ export class SvelteInjector {
 		}
 	}
 
-	private static async setSlot(component: SvelteElement, slotName: string | undefined, slotContent: string) {
-		let slotObject = component.slots.find((slot) => slot.name === slotName);
-		if (!slotObject) {
-			slotObject = { name: slotName, value: "" };
-			component.slots.push(slotObject);
-		}
-		slotObject.value = slotContent;
+	private static async setSlot(component: SvelteElement, slotContent: string, slotName = "default") {
+		component.slots[slotName] = slotContent;
 		await this.updateComponent(component);
 	}
 
@@ -193,7 +187,7 @@ export class SvelteInjector {
 			observers.push(this.createDataObserver(svelteElement));
 		}
 
-		const slotObservers = svelteElement.slots.map((slot) => this.createSlotObserver(svelteElement, slot.name));
+		const slotObservers = Object.keys(svelteElement.slots).map((slotName) => this.createSlotObserver(svelteElement, slotName));
 
 		return [...observers, ...slotObservers];
 	}
@@ -232,11 +226,11 @@ export class SvelteInjector {
 		return observer;
 	}
 
-	private static createSlotObserver(svelteElement: SvelteElement, slotName: string | undefined): MutationObserver {
+	private static createSlotObserver(svelteElement: SvelteElement, slotName = "default"): MutationObserver {
 		const observer = new MutationObserver((mutations) => {
 			if (this.haveCharactersChanged(mutations)) {
-				const { name, value } = this.extractSlot(svelteElement.domElement, slotName);
-				svelteElement.updateSlot(name, value);
+				const value = this.extractSlot(svelteElement.domElement, slotName);
+				svelteElement.updateSlot(slotName, value);
 			}
 		});
 
@@ -550,16 +544,21 @@ export class SvelteInjector {
 		return parsedProps;
 	}
 
-	private static extractSlots(svelteElement: HTMLElement): Slot[] {
+	private static extractSlots(svelteElement: HTMLElement): SlotObject {
+		const slotObject: SlotObject = {}
 		const slots = this.getSlotElements(svelteElement);
-		return slots.map((slot) => {
-			return { name: slot.dataset.slot, value: slot.innerHTML };
+
+		slots.forEach((slot) => {
+			const slotName = slot.dataset.slot ?? "default";
+			slotObject[slotName] = slot.innerHTML;
 		});
+
+		return slotObject;
 	}
 
-	private static extractSlot(svelteElement: HTMLElement, slotName: string | undefined): Slot {
+	private static extractSlot(svelteElement: HTMLElement, slotName = "default"): string {
 		const slots = this.extractSlots(svelteElement);
-		return slots.find((slot) => slot.name === slotName) ?? { name: slotName, value: "" };
+		return slots[slotName];
 	}
 
 	private static extractToRender(svelteElement: HTMLElement) {
