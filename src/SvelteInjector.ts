@@ -470,12 +470,12 @@ export class SvelteInjector {
 	}
 
 	private static extractProps(svelteElement: HTMLElement) {
-		const props = this.getPropsElement(svelteElement)?.innerHTML;
+		const props = this.getPropsElement(svelteElement)?.content?.textContent;
 		if (!props) return null;
 
 		let parsedProps;
 		try {
-			const decode = !!props.includes("%");
+			const decode = !!props.includes("%7B");
 			parsedProps = decode ? this.decode(props) : this.parse(props);
 		} catch (e) {
 			console.error(
