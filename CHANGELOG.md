@@ -1,3 +1,6 @@
+# 2.0.8
+- Fix: Now correctly reading props containing HTML strings
+
 # 2.0.7
 - Fix: Dependency injection in AngularJs component when minified
 
