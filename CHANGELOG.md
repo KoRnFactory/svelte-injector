@@ -1,4 +1,4 @@
-# 2.0.9
+# 2.0.10
 - Fix: Possible race condition on element creation.
 
 # 2.0.8
