@@ -115,8 +115,7 @@ export class SvelteInjector {
 	): Promise<SvelteElement> {
 		return new Promise((resolve, reject) => {
 			if (!Component || !domElement) reject();
-			// let { toRender } = this.sanitizedProps(props);
-
+			if (domElement.hasAttribute(svelteIndexAttribute)) reject("Element already created.");
 			const index = ++this.lastIndex;
 			domElement.setAttribute(svelteIndexAttribute, index.toString());
 
