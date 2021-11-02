@@ -1,3 +1,6 @@
+# 2.0.9
+- Fix: Possible race condition on element creation.
+
 # 2.0.8
 - Fix: Now correctly reading props containing HTML strings
 
