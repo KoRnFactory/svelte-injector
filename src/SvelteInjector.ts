@@ -258,15 +258,14 @@ export class SvelteInjector {
 	 * @return - An array of promises that resolve each {@link SvelteElement} when the component is mounted or created (when toRender = false)
 	 */
 	public static async hydrate(domTarget: HTMLElement, options = {} as HydrateOptions): Promise<SvelteElement[]> {
-		const svelteElements = domTarget.querySelectorAll<HTMLElement>("[data-component-name]");
+		const svelteElements = Array.from(domTarget.querySelectorAll<HTMLElement>("[data-component-name]"));
 
 		if (!svelteElements || !svelteElements.length) return [];
 
-		const createdComponents = [];
+		const createdComponents: SvelteElement[] = [];
 
-		// @ts-ignore
 		for (const svelteElement of svelteElements) {
-			const createdElement = await this.createElementFromTemplate(svelteElement, this.sanitizeOptions(options));
+			const createdElement = await this.createElementFromTemplate(svelteElement, this.sanitizeOptions(options)).catch(console.warn);
 			if (createdElement) {
 				createdComponents.push(createdElement);
 			}
