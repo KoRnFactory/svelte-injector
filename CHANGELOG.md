@@ -1,3 +1,6 @@
+# 2.0.11
+- Make function *hydrate()* catch and warn in case of errors (calling *hydrate()* more than once on some DOM element)
+
 # 2.0.10
 - Fix: Possible race condition on element creation.
 

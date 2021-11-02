@@ -115,10 +115,11 @@ export class SvelteInjector {
 	): Promise<SvelteElement> {
 		return new Promise((resolve, reject) => {
 			if (!Component || !domElement) {
-				return reject("Component or target dom Element not found.");
+				return reject("Component or target DOM Element not found.");
 			}
 			if (domElement.hasAttribute(svelteIndexAttribute)) {
-				return reject("Element already created.");
+				const index = domElement.getAttribute(svelteIndexAttribute);
+				return reject(`Element with index: ${index} already created.`);
 			}
 			const index = ++this.lastIndex;
 			domElement.setAttribute(svelteIndexAttribute, index.toString());
