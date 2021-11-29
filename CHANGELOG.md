@@ -1,3 +1,6 @@
+# 2.0.12
+- [AngularJS] Prefer indexed access over *get()* call on *$element*
+
 # 2.0.11
 - Make function *hydrate()* catch and warn in case of errors (calling *hydrate()* more than once on some DOM element)
 
