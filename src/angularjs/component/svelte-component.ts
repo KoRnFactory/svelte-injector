@@ -23,7 +23,7 @@ class SvelteComponentController {
 
 	$onInit() {
 		this.name = this.component || this.componentName;
-		const rootElement = this.$element.get(0);
+		const rootElement = this.$element[0];
 		rootElement.style.display = "contents";
 		rootElement.firstChild.appendChild(this.propsElement);
 		this.$timeout(() => {
