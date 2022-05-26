@@ -263,15 +263,11 @@ export class SvelteInjector {
 
 		if (!svelteElements || !svelteElements.length) return [];
 
-		const createdComponents: SvelteElement[] = [];
+		const createdComponentPromises = svelteElements.map((svelteElement) =>
+			this.createElementFromTemplate(svelteElement, this.sanitizeOptions(options)).catch(console.warn),
+		);
 
-		for (const svelteElement of svelteElements) {
-			const createdElement = await this.createElementFromTemplate(svelteElement, this.sanitizeOptions(options)).catch(console.warn);
-			if (createdElement) {
-				createdComponents.push(createdElement);
-			}
-		}
-		return createdComponents;
+		return (await Promise.all(createdComponentPromises)).filter((component) => component as SvelteElement) as SvelteElement[];
 	}
 
 	private static async createElementFromTemplate(target: HTMLElement, options: CreateOptions): Promise<SvelteElement | null> {

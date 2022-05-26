@@ -1,3 +1,6 @@
+# 2.0.13
+- Enhancement: Don't wait on each component to be rendered in *hydrate*
+
 # 2.0.12
 - [AngularJS] Prefer indexed access over *get()* call on *$element*
 
