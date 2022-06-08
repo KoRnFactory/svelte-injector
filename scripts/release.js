@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const pkg = require("../package.json");
 const childPkg = require("../package-child.json");
+const simpleGit = require("simple-git");
 
 const packageFolder = "lib";
 
@@ -71,21 +72,25 @@ async function release() {
 	// Copy dependencies
 	childPkg.dependencies = pkg.dependencies;
 
+	const gitClient = simpleGit();
+
+	await gitClient.pull();
+	await exec.promise("npm i");
+
 	fs.writeFileSync(path.resolve(__dirname, "../package.json"), JSON.stringify(pkg, null, 2));
 	fs.writeFileSync(path.resolve(__dirname, "../package-child.json"), JSON.stringify(childPkg, null, 2));
 
-	await exec.promise("git pull");
-	await exec.promise("npm i");
 	await exec.promise(`npm run build-lib`);
-	await exec.promise("git add .");
-	await exec.promise(`git commit -m \"${pkg.version} release\"`);
-	await exec.promise("git push");
-	await exec.promise(`git tag v${pkg.version}`);
-	await exec.promise("git push origin --tags");
 
 	fs.copyFileSync(path.resolve(__dirname, "../package-child.json"), path.resolve(__dirname, `../${packageFolder}/package.json`));
 	fs.copyFileSync(path.resolve(__dirname, "../README.md"), path.resolve(__dirname, `../${packageFolder}/README.md`));
 	fs.copyFileSync(path.resolve(__dirname, "../CHANGELOG.md"), path.resolve(__dirname, `../${packageFolder}/CHANGELOG.md`));
+
+	await gitClient.add(".");
+	await gitClient.commit(`Release ${pkg.version}`, ".", { "--author": "KoRnFactory" });
+	await gitClient.addTag(`v${pkg.version}`);
+	await gitClient.push();
+	await gitClient.pushTags();
 
 	let versionParameter = "";
 
