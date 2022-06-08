@@ -1,3 +1,6 @@
+# 2.1.0
+- Improvement: Every call to *hydrate* updates the App only once
+
 # 2.0.13
 - Enhancement: Don't wait on each component to be rendered in *hydrate*
 

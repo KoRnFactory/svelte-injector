@@ -1,5 +1,6 @@
 import { components } from "./stores";
 import { SvelteComponent } from "svelte";
+import { get } from "svelte/store";
 
 interface SvelteLink {
 	name: string;
@@ -7,13 +8,16 @@ interface SvelteLink {
 	svelteComponentGetter?: () => Promise<typeof SvelteComponent>;
 }
 
-export interface SvelteElement {
+interface SvelteBaseElement {
 	domElement: HTMLElement;
-	instance?: SvelteComponent;
 	Component: typeof SvelteComponent;
 	props: any;
 	toRender: boolean;
 	index: number;
+}
+
+export interface SvelteElement extends SvelteBaseElement {
+	instance?: SvelteComponent;
 	options: Options;
 	observers?: MutationObserver[];
 	onMount(): void;
@@ -97,61 +101,42 @@ export class SvelteInjector {
 		toRender = true,
 		options = {} as CreateOptions,
 	): Promise<SvelteElement> {
-		if (typeof component === "string") {
-			const Component = await this.findComponentByName(component);
-			if (!Component) return Promise.reject();
-			return this.createElement(domElement, Component, props, toRender, this.sanitizeOptions(options));
-		} else {
-			return this.createElement(domElement, component, props, toRender, this.sanitizeOptions(options, { observe: false }));
-		}
+		const baseElement = await SvelteInjector.createBaseElement(domElement, component, props, toRender);
+		const svelteElement = await SvelteInjector.enhanceBaseElement(baseElement, this.sanitizeOptions(options));
+		if (!svelteElement) return Promise.reject();
+
+		const returnPromise = SvelteInjector.resolveOnMount(svelteElement);
+
+		SvelteInjector.addComponents([svelteElement]);
+
+		return returnPromise;
 	}
 
-	private static createElement(
+	private static async createBaseElement(
 		domElement: HTMLElement,
-		Component: typeof SvelteComponent,
+		Component: typeof SvelteComponent | string,
 		props: any,
 		toRender: boolean,
-		options: Options,
-	): Promise<SvelteElement> {
-		return new Promise((resolve, reject) => {
-			if (!Component || !domElement) {
-				return reject("Component or target DOM Element not found.");
-			}
-			if (domElement.hasAttribute(svelteIndexAttribute)) {
-				const index = domElement.getAttribute(svelteIndexAttribute);
-				return reject(`Element with index: ${index} already created.`);
-			}
-			const index = ++this.lastIndex;
-			domElement.setAttribute(svelteIndexAttribute, index.toString());
+	): Promise<SvelteBaseElement> {
+		let componentClass: typeof SvelteComponent;
 
-			const compData: SvelteElement = {
-				domElement,
-				Component,
-				props,
-				index,
-				toRender,
-				options,
-				onMount() {
-					compData.observers = SvelteInjector.createObservers(compData);
-					resolve(compData);
-				},
-				async destroy() {
-					await SvelteInjector.destroyElement(compData);
-				},
-				async updateProps(newProps: any) {
-					await SvelteInjector.setProps(compData, newProps);
-				},
-				async setToRender(toRender: boolean) {
-					await SvelteInjector.setToRender(compData, toRender);
-				},
-			};
+		if (typeof Component === "string") {
+			const foundComponent = await this.findComponentByName(Component);
+			if (!foundComponent) return Promise.reject();
+			componentClass = foundComponent;
+		} else {
+			componentClass = Component;
+		}
 
-			if (!toRender) {
-				resolve(compData);
-			}
+		const index = SvelteInjector.extractIndexOrCreateNew(domElement);
 
-			this.addComponent(compData);
-		});
+		return {
+			domElement,
+			Component: componentClass,
+			props,
+			toRender,
+			index,
+		};
 	}
 
 	private static async setProps(component: SvelteElement, props: any) {
@@ -263,36 +248,102 @@ export class SvelteInjector {
 
 		if (!svelteElements || !svelteElements.length) return [];
 
-		const createdComponentPromises = svelteElements.map((svelteElement) =>
-			this.createElementFromTemplate(svelteElement, this.sanitizeOptions(options)).catch(console.warn),
-		);
+		const parsedElements = await Promise.all(svelteElements.map((element) => SvelteInjector.parseElement(element)));
+		const createdElements = (
+			await Promise.all(
+				parsedElements.map((element) => SvelteInjector.enhanceBaseElement(element, this.sanitizeOptions(options)).catch(console.warn)),
+			)
+		).filter((element) => element as SvelteElement) as SvelteElement[];
+		const promises = createdElements.map((element) => SvelteInjector.resolveOnMount(element));
 
-		return (await Promise.all(createdComponentPromises)).filter((component) => component as SvelteElement) as SvelteElement[];
+		SvelteInjector.addComponents(createdElements);
+
+		return await Promise.all(promises);
 	}
 
-	private static async createElementFromTemplate(target: HTMLElement, options: CreateOptions): Promise<SvelteElement | null> {
-		if (target.hasAttribute(svelteIndexAttribute)) return null;
-		const componentName = target.dataset.componentName;
+	public static async parseElement(domElement: HTMLElement): Promise<SvelteBaseElement> {
+		const componentName = domElement.dataset.componentName;
 		if (!componentName) return Promise.reject();
-		const component = await this.findComponentByName(componentName);
-		if (!component) {
-			console.error("Requested component not found. Did you link it first?", target, componentName);
+		const Component = await this.findComponentByName(componentName);
+		if (!Component) {
+			console.error("Requested component not found. Did you link it first?", domElement, componentName);
 			return Promise.reject();
 		}
-		const props = this.extractProps(target);
-		const toRender = this.extractToRender(target);
-		target.style.display = "contents";
+		const props = this.extractProps(domElement);
+		const toRender = this.extractToRender(domElement);
 
-		return this.createElement(target as HTMLElement, component, props, toRender, this.sanitizeOptions(options));
+		if (!Component || !domElement) {
+			return Promise.reject("Component or target DOM Element not found.");
+		}
+
+		const index = this.extractIndexOrCreateNew(domElement);
+
+		return {
+			domElement,
+			Component,
+			props,
+			index,
+			toRender,
+		};
 	}
 
-	private static async findElementByIndex(index: string | number): Promise<SvelteElement | null> {
+	private static async enhanceBaseElement(element: SvelteBaseElement, options: Options): Promise<SvelteElement | null> {
+		const alreadyCreated = SvelteInjector.findElementByIndex(element.index);
+		if (alreadyCreated) {
+			return Promise.reject(`Element with index: ${element.index} already created.`);
+		}
+
+		element.domElement.style.display = "contents";
+
+		const createdElement = element as SvelteElement;
+
+		createdElement.options = options;
+
+		createdElement.onMount = () => {
+			createdElement.observers = SvelteInjector.createObservers(createdElement);
+		};
+		createdElement.destroy = () => {
+			SvelteInjector.destroyElement(createdElement);
+		};
+		createdElement.updateProps = (props: any) => {
+			SvelteInjector.setProps(createdElement, props);
+		};
+		createdElement.setToRender = (toRender: boolean) => {
+			SvelteInjector.setToRender(createdElement, toRender);
+		};
+
+		return createdElement;
+	}
+
+	private static findElementByIndex(index: string | number): SvelteElement | null {
+		const currentComponents = get(components);
+		const element = currentComponents.find((component) => component.index.toString() === index.toString());
+		return element ?? null;
+	}
+
+	private static extractIndexOrCreateNew(domElement: HTMLElement) {
+		const targetIndex = domElement.getAttribute(svelteIndexAttribute);
+		let index: number;
+		if (targetIndex) {
+			index = Number.parseInt(targetIndex);
+		} else {
+			index = ++this.lastIndex;
+			domElement.setAttribute(svelteIndexAttribute, index.toString());
+		}
+		return index;
+	}
+
+	private static resolveOnMount(element: SvelteElement): Promise<SvelteElement> {
 		return new Promise((resolve) => {
-			const unsubscribe = components.subscribe((components) => {
-				const element = components.find((component) => component.index.toString() === index.toString());
-				resolve(element ?? null);
-			});
-			unsubscribe();
+			if (!element.toRender) {
+				return resolve(element);
+			}
+
+			const previousOnMount = element.onMount;
+			element.onMount = () => {
+				previousOnMount();
+				resolve(element);
+			};
 		});
 	}
 
@@ -333,7 +384,6 @@ export class SvelteInjector {
 			components.update((components) => {
 				const index = components.indexOf(component);
 				components.splice(index, 1);
-				// window["svelteElements"] = components;
 				return components;
 			});
 			resolve(undefined);
@@ -364,20 +414,24 @@ export class SvelteInjector {
 		});
 	}
 
-	private static addComponent(component: SvelteElement) {
+	private static addComponents(elements: SvelteElement[]) {
 		components.update((components) => {
-			components.push(component);
-			// window["svelteElements"] = components;
+			components.push(...elements);
 			return components;
 		});
 	}
 
-	private static updateComponent(component: SvelteElement): Promise<null> {
+	private static updateComponent(element: SvelteElement): Promise<null> {
+		return SvelteInjector.updateComponents([element]);
+	}
+
+	private static updateComponents(elements: SvelteElement[]): Promise<null> {
 		return new Promise((resolve) => {
 			components.update((components) => {
-				const index = components.indexOf(component);
-				components[index] = component;
-				// window["svelteElements"] = components;
+				elements.forEach((element) => {
+					const index = components.indexOf(element);
+					components[index] = element;
+				});
 				resolve(null);
 				return components;
 			});
@@ -385,15 +439,12 @@ export class SvelteInjector {
 	}
 
 	private static async getComponentsNumber(): Promise<number> {
-		return new Promise((resolve) => {
-			const unsubscribe = components.subscribe(async (components) => {
-				if (components.length > 0) {
-					resolve(await SvelteInjector.clean());
-				}
-				resolve(0);
-			});
-			unsubscribe();
-		});
+		const currentComponents = get(components);
+		if (currentComponents.length > 0) {
+			return await SvelteInjector.clean();
+		}
+
+		return 0;
 	}
 
 	/**
@@ -468,7 +519,7 @@ export class SvelteInjector {
 		return encode ? this.encode(props) : this.stringify(props);
 	}
 
-	private static extractProps(svelteElement: HTMLElement) {
+	private static extractProps(svelteElement: HTMLElement): Record<string, any> | null {
 		const props = this.getPropsElement(svelteElement)?.content?.textContent;
 		if (!props) return null;
 
@@ -490,7 +541,7 @@ export class SvelteInjector {
 		return parsedProps;
 	}
 
-	private static extractToRender(svelteElement: HTMLElement) {
+	private static extractToRender(svelteElement: HTMLElement): boolean {
 		const toRenderAttribute = svelteElement.dataset.toRender;
 
 		if (!toRenderAttribute) return true;
