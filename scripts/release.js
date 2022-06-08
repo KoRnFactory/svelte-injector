@@ -100,7 +100,7 @@ async function release() {
 		versionParameter = " --tag next";
 	}
 
-	await exec.promise(`npm publish ${packageFolder}${versionParameter}`);
+	await exec.promise(`npm publish ${packageFolder}/${versionParameter}`);
 }
 
 release().then();
