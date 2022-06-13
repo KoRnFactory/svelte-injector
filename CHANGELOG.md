@@ -1,3 +1,6 @@
+# 2.1.1
+- Fix: only apply display contents on data-component-name elements
+
 # 2.1.0
 - Improvement: Every call to *hydrate* updates the App only once
 

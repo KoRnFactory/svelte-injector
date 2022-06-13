@@ -293,7 +293,9 @@ export class SvelteInjector {
 			return Promise.reject(`Element with index: ${element.index} already created.`);
 		}
 
-		element.domElement.style.display = "contents";
+		if (element.domElement.dataset.componentName) {
+			element.domElement.style.display = "contents";
+		}
 
 		const createdElement = element as SvelteElement;
 
