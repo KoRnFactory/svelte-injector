@@ -1,4 +1,7 @@
 # 2.1.1
+- Fix: resolved an issue that could break the InjectedComponents comp in case of dom cloning.
+
+# 2.1.1
 - Fix: only apply display contents on data-component-name elements
 
 # 2.1.0

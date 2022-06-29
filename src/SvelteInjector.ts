@@ -317,8 +317,7 @@ export class SvelteInjector {
 		return createdElement;
 	}
 
-	private static findElementByIndex(index: string | number): SvelteElement | null {
-		const currentComponents = get(components);
+	private static findElementByIndex(index: string | number, currentComponents = get(components)): SvelteElement | null {
 		const element = currentComponents.find((component) => component.index.toString() === index.toString());
 		return element ?? null;
 	}
@@ -418,7 +417,12 @@ export class SvelteInjector {
 
 	private static addComponents(elements: SvelteElement[]) {
 		components.update((components) => {
-			components.push(...elements);
+			elements.forEach((element) => {
+				const alreadyAdded = this.findElementByIndex(element.index, components);
+				if (!alreadyAdded) {
+					components.push(element);
+				}
+			});
 			return components;
 		});
 	}
