@@ -9,6 +9,7 @@ class SvelteComponentController {
 	options: any;
 	encode: boolean;
 	onMount: any;
+	onEvent: any;
 	private element: SvelteElement | undefined;
 	private propsElement: HTMLTemplateElement;
 
@@ -29,6 +30,13 @@ class SvelteComponentController {
 		this.$timeout(() => {
 			SvelteInjector.hydrate(rootElement, this.options).then(([element]) => {
 				this.element = element;
+				this.element.handle = (e: CustomEvent) => {
+					this.onEvent({
+						$type: e.type,
+						$detail: e.detail,
+						$event: e,
+					});
+				};
 				if (this.onMount) this.onMount({ element });
 			});
 		});
@@ -44,6 +52,7 @@ class SvelteComponentController {
 
 	$onDestroy() {
 		this.element?.destroy();
+		delete this.element?.handle;
 	}
 }
 
@@ -82,5 +91,6 @@ export const svelteComponent = {
 		options: "<",
 		encode: "<",
 		onMount: "&",
+		onEvent: "&",
 	},
 };

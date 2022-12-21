@@ -193,6 +193,7 @@ const bindings = {
   options: "?<", // HydrateOptions
   encode: "?<", // encode props?
   onMount: "?&", // Function called with "element" param on mount
+  onEvent: "?&", // Handle events. Be sure to set {"on:": ["eventName"]} in props to specify which events
 }
 ```
 

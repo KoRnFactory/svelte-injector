@@ -1,3 +1,6 @@
+# 2.1.2
+- **Feature**: Allow events to propogate up from Svelte. Add "onEvent" to AngularJS component.
+
 # 2.1.1
 - Fix: resolved an issue that could break the InjectedComponents comp in case of dom cloning.
 
