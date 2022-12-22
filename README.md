@@ -213,7 +213,7 @@ const bindings = {
   options: "?<", // HydrateOptions
   encode: "?<", // encode props?
   onMount: "?&", // Function called with "element" param on mount
-  on: "?<", // Handle events. Eg. {"hello": (e) => {console.log(e)} }
+  on: "?<", // Handle events. Eg. {"hello": (e) => {console.log(e)} } . _Note: changes to this property are ignored_
 }
 ```
 
