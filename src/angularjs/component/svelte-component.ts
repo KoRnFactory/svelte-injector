@@ -1,5 +1,9 @@
 import { SvelteElement, SvelteInjector } from "../../SvelteInjector";
 
+interface IOnProps {
+	[eventName: string]: (e: Event) => void;
+}
+
 class SvelteComponentController {
 	component: string | undefined;
 	componentName: string | undefined;
@@ -9,7 +13,8 @@ class SvelteComponentController {
 	options: any;
 	encode: boolean;
 	onMount: any;
-	onEvent: any;
+	on?: IOnProps;
+	off?: (() => void)[];
 	private element: SvelteElement | undefined;
 	private propsElement: HTMLTemplateElement;
 
@@ -30,13 +35,14 @@ class SvelteComponentController {
 		this.$timeout(() => {
 			SvelteInjector.hydrate(rootElement, this.options).then(([element]) => {
 				this.element = element;
-				this.element.handle = (e: CustomEvent) => {
-					this.onEvent({
-						$type: e.type,
-						$detail: e.detail,
-						$event: e,
+				if (this.on && element.instance) {
+					const events = Array.from(Object.entries(this.on));
+					this.off = events.map(([name, listener]) => {
+						return element.instance!.$on(name, (e: Event) => {
+							this.$timeout(() => listener(e));
+						});
 					});
-				};
+				}
 				if (this.onMount) this.onMount({ element });
 			});
 		});
@@ -51,8 +57,8 @@ class SvelteComponentController {
 	}
 
 	$onDestroy() {
+		this.off?.forEach((cb) => cb());
 		this.element?.destroy();
-		delete this.element?.handle;
 	}
 }
 
@@ -76,6 +82,8 @@ class SvelteComponentController {
  *
  * onMount: "&" - function called with on mount with parameters: *element*
  *
+ * on: "<" - map of callbacks for svelte component events. Eg. {click: (e) => void, hello: (e) => void}
+ *
  * @example
  * <svelte-component component-name="hello" props"$ctrl.svelteProps" on-mount="setChildElement(element)"></svelte-component>
  *
@@ -91,6 +99,6 @@ export const svelteComponent = {
 		options: "<",
 		encode: "<",
 		onMount: "&",
-		onEvent: "&",
+		on: "<",
 	},
 };

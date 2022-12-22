@@ -148,6 +148,23 @@ SvelteInjector.hydrate(document.body);
 
 _NOTE: make sure to hydrate the body only after linking your components._
 
+#### Event Handling
+
+Once a Svelte Element has be created you can listen to events pushed from the component.
+
+```typescript
+SvelteInjector.create(target, "hello", props)
+  .then((element) => {
+    off = element.instance.$on('change', (e) => {
+      console.log('change was called!', e);
+    });
+  });
+// Be sure to unsubscribe once you no longer need the element
+off(); // unsubscribe
+````
+
+_Similar code will work when using the promise returned from SvelteInjector.hydrate_
+
 # Framework integration
 
 This project was created to easily migrate apps from AngularJs to Svelte, but it is not framework specific.
@@ -193,7 +210,7 @@ const bindings = {
   options: "?<", // HydrateOptions
   encode: "?<", // encode props?
   onMount: "?&", // Function called with "element" param on mount
-  onEvent: "?&", // Handle events. Be sure to set {"on:": ["eventName"]} in props to specify which events
+  on: "?<", // Handle events. Eg. {"hello": (e) => {console.log(e)} }
 }
 ```
 

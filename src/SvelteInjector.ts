@@ -14,7 +14,6 @@ interface SvelteBaseElement {
 	props: any;
 	toRender: boolean;
 	index: number;
-	handle?: (e: CustomEvent) => void;
 }
 
 export interface SvelteElement extends SvelteBaseElement {
