@@ -6,4 +6,4 @@
 	export let props;
 </script>
 
-<svelte:component this={component.Component} bind:this={component.instance} {...props}  />
+<svelte:component this={component.Component} bind:this={component.instance} {...props} />

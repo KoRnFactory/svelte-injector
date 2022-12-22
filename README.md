@@ -155,10 +155,13 @@ Once a Svelte Element has be created you can listen to events pushed from the co
 ```typescript
 SvelteInjector.create(target, "hello", props)
   .then((element) => {
+    // grab the instance and subcribe to custom events
+    // $on returns an "unsubscriber"
     off = element.instance.$on('change', (e) => {
       console.log('change was called!', e);
     });
   });
+
 // Be sure to unsubscribe once you no longer need the element
 off(); // unsubscribe
 ````
