@@ -25,7 +25,6 @@
 		dispatch('mount', instance);
 
 		return () => {
-			instance.$destroy();
 			dispatch('destroy', instance);
 		};
 	});
