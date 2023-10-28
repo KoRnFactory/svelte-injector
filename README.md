@@ -8,7 +8,7 @@
 - Easily **migrate** to Svelte while keeping older code running.
 - Built in **React** and **AngularJS** components for ease of use.
 - Write **agnostic** Svelte components. No workarounds needed.
-- Uses **Portals** to render components where you want them.
+- Renders your components where you want them while keeping the context.
 - The Svelte App is in your control. Use _contexts/store/head/window_.
 - Support for **dynamic imports** and **lazy loading**.
 
@@ -19,11 +19,14 @@
   - [Setup](#setup)
   - [Injecting](#injecting-components)
 - [Framework Integration](#framework-integration)
-  - [AngularJs](#angularjs)
   - [React](#react)
+  - [AngularJs](#angularjs)
   - [Angular](#angular)
 - [JS API](#js-api)
-- [Migrating from v1](#migrating-from-v1)
+- [Migrating from earlier versions](#migrating-from-earlier-versions)
+  - [Migrating from v2](#migrating-from-v2)
+  - [Migrating from v1](#migrating-from-v1)
+- [Examples](#examples)
 - [Credits](#credits)
 
 # Installing
@@ -43,15 +46,15 @@ Create your Svelte App: --> [reference](https://svelte.dev/tutorial/making-an-ap
 `src/svelte/main`
 
 ```typescript
-import App from "./App.svelte";
+import App from './App.svelte';
 
-const svelteEntrypoint = document.createElement("div");
-svelteEntrypoint.id = "svelte-entrypoint";
+const svelteEntrypoint = document.createElement('div');
+svelteEntrypoint.id = 'svelte-entrypoint';
 document.body.prepend(svelteEntrypoint);
 
 // Create Svelte App
 new App({
-	target: svelteEntrypoint,
+	target: svelteEntrypoint
 });
 ```
 
@@ -72,36 +75,42 @@ Use `svelte-loader` or `rollup-plugin-svelte` in your bundler. Make sure you are
 ## Injecting Components
 
 ### Creating
+
 #### Imported components
 
 Import the component class into your framework controller, then use `create()`.
 
 ```typescript
-import Hello from "./Hello.svelte";
+import Hello from './Hello.svelte';
+import { create } from 'svelte-injector';
 
-SvelteInjector.create(target, Hello, props);
+create(target, Hello, props);
 ```
 
-#### Linked components
+#### Registered components
 
-Link component class with a string to use it anywhere.
+Register component class to use it anywhere.
 
 Import your components somewhere in your bundle (es: create an `index.module` file)
 
 ```typescript
-import Hello from "./Hello.svelte";
-SvelteInjector.link("hello", Hello);
+import Hello from './Hello.svelte';
+import { registerComponent } from 'svelte-injector';
 
-// OR for lazy loading
-SvelteInjector.link("hello", async () => {
-    return (await import("./Hello.svelte")).default
-})
+registerComponent('hello', Hello);
+
+// OR for lazy loading dynamic imports
+registerComponent('hello', async () => {
+	return (await import('./Hello.svelte')).default; //The given function will only be called when *hydrate* finds a component with the name "hello"
+});
 ```
 
 then use this string as the second argument of `create()`
 
 ```typescript
-SvelteInjector.create(target, "hello", props);
+import { create } from 'svelte-injector';
+
+create(target, 'hello', props);
 ```
 
 ### Hydrating
@@ -122,7 +131,9 @@ Use this notation in the template:
 Then call `hydrate()` to update the components tree in Svelte.
 
 ```typescript
-SvelteInjector.hydrate(target);
+import { hydrate } from 'svelte-injector';
+
+hydrate(target);
 ```
 
 You can use `data-to-render` attribute as an `{if}` block in Svelte
@@ -143,10 +154,12 @@ On multi page applications you can create components directly from the source HT
 If any page of your source contains component markup, just `hydrate` the body to render them.
 
 ```typescript
-SvelteInjector.hydrate(document.body);
+import { hydrate } from 'svelte-injector';
+
+hydrate(document.body);
 ```
 
-_NOTE: make sure to hydrate the body only after linking your components._
+_NOTE: make sure to hydrate the body only after registering your components._
 
 # Framework integration
 
@@ -154,74 +167,32 @@ This project was created to easily migrate apps from AngularJs to Svelte, but it
 
 Svelte components should NOT be aware of the fact that they were used by another framework.
 
-## AngularJs
-
-Use the ***built-in AngularJS component***.
-
-Link your Svelte component
-
-```typescript
-//  /svelte/index.module.ts
-
-import SvelteInjector from "svelte-injector";
-import Component from "src/Component.svelte";
-
-SvelteInjector.link("component-name", Component);
-```
-
-
-```typescript
-// /angularjs/index.module.ts
-
-import { svelteComponent } from "svelte-injector/angularjs";
-
-angular.component("svelteComponent", svelteComponent);
-```
-
-Now in any AngularJS component you can use:
-
-```html
-<svelte-component component="component-name" props="$ctrl.svelteProps"/>
-```
-
-#### Bindings:
-```typescript
-const bindings = {
-  component: "@", // Link name
-  props: "?<", // Props object
-  toRender: "?<", // Ng-if
-  options: "?<", // HydrateOptions
-  encode: "?<", // encode props?
-  onMount: "?&", // Function called with "element" param on mount
-}
-```
-
-
 ## React
 
-Use the ***built-in React component***.
+Use the **_built-in React component_**.
 
 ```jsx
-import { SvelteComponent } from "svelte-injector/react"
+import { SvelteComponent } from 'svelte-injector/react';
 
 // Using the class
-import Component from "src/Component.svelte";
-function YourComponent(props){
-  return <SvelteComponent component={Component} props={{name: "world"}}/>
+import Component from 'src/Component.svelte';
+function YourComponent(props) {
+	return <SvelteComponent component={Component} props={{ name: 'world' }} />;
 }
 
-// Using the link name
-function YourComponent(props){
-  return <SvelteComponent component={"hello"} props={{name: "world"}}/>
+// Using the registered name
+function YourComponent(props) {
+	return <SvelteComponent component={'hello'} props={{ name: 'world' }} />;
 }
 
 // Conditional rendering
-function YourComponent(props){
-  return <SvelteComponent component={"hello"} props={{name: "world"}} to-render={props.render}/>
+function YourComponent(props) {
+	return <SvelteComponent component={'hello'} props={{ name: 'world' }} to-render={props.render} />;
 }
 ```
 
 #### Props:
+
 ```typescript
 export type SvelteComponentProps = {
 	component: string | typeof SvelteComponentClass;
@@ -232,7 +203,47 @@ export type SvelteComponentProps = {
 };
 ```
 
+## AngularJs
 
+Use the **_built-in AngularJS component_**.
+
+Register your Svelte component
+
+```typescript
+//  /svelte/index.module.ts
+
+import { registerComponent } from 'svelte-injector';
+import Component from 'src/Component.svelte';
+
+registerComponent('component-name', Component);
+```
+
+```typescript
+// /angularjs/index.module.ts
+
+import { svelteComponent } from 'svelte-injector/angularjs';
+
+angular.component('svelteComponent', svelteComponent);
+```
+
+Now in any AngularJS component you can use:
+
+```html
+<svelte-component component="component-name" props="$ctrl.svelteProps" />
+```
+
+#### Bindings:
+
+```typescript
+const bindings = {
+	component: '@', // Registered component name
+	props: '?<', // Props object
+	toRender: '?<', // Ng-if
+	options: '?<', // HydrateOptions
+	encode: '?<', // encode props?
+	onMount: '?&' // Function called with "element" param on mount
+};
+```
 
 ## Angular
 
@@ -244,13 +255,13 @@ Docs in progress
 
 Interface `SvelteElement`
 
-### ***updateProps(props)***
+### **_updateProps(props)_**
 
 #### props `object`
 
 The new props object. All previous props will be dropped.
 
-### ***setToRender(toRender)***
+### **_setToRender(toRender)_**
 
 #### toRender `boolean`
 
@@ -260,9 +271,9 @@ Set if the component should render of not. Useful for conditional rendering.
 
 Destroys the component.
 
-## Injector
+## Functions
 
-### ***create(target, Component, props[,toRender], [options])***
+### **_create(target, Component, props[,toRender], [options])_**
 
 #### target `HTMLElement`
 
@@ -270,7 +281,7 @@ The element in which the component will be rendered
 
 #### Component `SvelteComponent | string`
 
-The Svelte component Class or the link name
+The Svelte component Class or the registered component name
 
 #### props `object`
 
@@ -288,9 +299,9 @@ Object with options
 
 A promise that resolves the `SvelteElement` when the component is mounted or created (when toRender = false)
 
-### ***link(linkName, svelteComponent)***
+### **_registerComponent(name, svelteComponent)_**
 
-#### linkName `string`
+#### name `string`
 
 The name of the link
 
@@ -298,7 +309,7 @@ The name of the link
 
 The Svelte Component class or an async functions that returns one (useful for dynamic imports and lazy loading).
 
-### ***hydrate(target[,options])***
+### **_hydrate(target[,options])_**
 
 #### target `HTMLElement`
 
@@ -312,57 +323,89 @@ Object with options
 
 A promise array for each created component that resolves the `SvelteElement` when the component is mounted or created (when data-to-render = false)
 
-### ***findComponentByName(name)***
+### **_findComponentByName(name)_**
 
 #### name `string`
 
-name of the component as previously linked with `link()`
+name of the component as previously registered with `registerComponent()`
 
 #### RETURN `typeof SvelteComponent`
 
-The Class of the linked component, if any
+The Class of the registered component, if any
 
-### ***findLinkNameByClass(Class)***
+### **_findRegisteredComponentNameByClass(Class)_**
 
 #### Class `typeof SvelteComponent`
 
-Class of the component as previously linked with `link()`
+Class of the component as previously registered with `registerComponent()`
 
 #### RETURN `string`
 
-The name of the linked component, if any
+The name of the registered component, if any
 
-### ***generatePropsBlock(props)***
-Returns an HTML string representing the props template HTML element, as expected from ```hydrate```.
+### **_generatePropsBlock(props)_**
 
-### ***serializeProps(props)*** 
+Returns an HTML string representing the props template HTML element, as expected from `hydrate`.
+
+### **_serializeProps(props)_**
+
 Returns stringified (and encoded?) string from a props object, as expected from the parser.
 
-
 ## Options
-Options object are the opional last argument of ```create``` and ```hydrate``` methods.
+
+Options object are the optional last argument of `create` and `hydrate` methods.
+
 ### CreateOptions:
-####observeParents
+
+#### observeParents
+
 Create a MutationObserver on the element parent and destroy the component if no longer in the DOM
 
 ### HydrateOptions:
-####observeParents (default: true)
+
+#### observeParents (default: true)
+
 Create a MutationObserver on the element parent and destroy the component if no longer in the DOM
 
-####observe (default: true)
+#### observe (default: true)
+
 Create a MutationObserver on the props element and update the component on props updates.
 
-# Migrating from v1
+# Migrating from earlier versions
+
+## Migrating from v2
+
+### Imports:
+
+All functions from SvelteInjector are now named exports.
+
+```typescript
+import { create } from 'svelte-injector';
+create(target, Component, props);
+
+// or
+import * as SvelteInjector from 'svelte-injector';
+SvelteInjector.create(target, Component, props);
+```
+
+### Link -> RegisterComponent
+
+The `link` function has been renamed to `registerComponent`.
+
+## Migrating from v1
 
 ### Methods:
+
 The main methods have been renamed
 
-_createElement_ --> ***create***
+_createElement_ --> **_create_**
 
-_createElementFromTemplate_, _syncTemplate_ --> ***hydrate***
+_createElementFromTemplate_, _syncTemplate_ --> **_hydrate_**
 
 ### Template
-Use of ```data-props``` attribute is no longer supported. Props should be expressed in the new template format:
+
+Use of `data-props` attribute is no longer supported. Props should be expressed in the new template format:
+
 ```html
 <div data-component-name="hello" data-to-render"true">
   <template class="props"">
@@ -372,6 +415,10 @@ Use of ```data-props``` attribute is no longer supported. Props should be expres
 </div>
 ```
 
+# Examples
+
+- [React](https://codesandbox.io/p/sandbox/svelteinjector-react-example-8nufl1)
+- [AngularJs](https://codesandbox.io/p/sandbox/svelteinjector-angularjs-example-5ds3mf)
 
 # Credits
 

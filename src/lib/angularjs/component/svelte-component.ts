@@ -1,4 +1,4 @@
-import { SvelteElement, SvelteInjector } from "../../SvelteInjector";
+import { type SvelteElement, hydrate, serializeProps } from '$lib/SvelteInjector.js';
 
 class SvelteComponentController {
 	component: string | undefined;
@@ -12,22 +12,22 @@ class SvelteComponentController {
 	private element: SvelteElement | undefined;
 	private propsElement: HTMLTemplateElement;
 
-	static $inject = ["$element", "$timeout"];
+	static $inject = ['$element', '$timeout'];
 	constructor(private $element: any, private $timeout: any) {
 		this.encode = true;
 		this.toRender = true;
-		const propsElement = document.createElement("template");
-		propsElement.className = "props";
+		const propsElement = document.createElement('template');
+		propsElement.className = 'props';
 		this.propsElement = propsElement;
 	}
 
 	$onInit() {
 		this.name = this.component || this.componentName;
 		const rootElement = this.$element[0];
-		rootElement.style.display = "contents";
+		rootElement.style.display = 'contents';
 		rootElement.firstChild.appendChild(this.propsElement);
 		this.$timeout(() => {
-			SvelteInjector.hydrate(rootElement, this.options).then(([element]) => {
+			hydrate(rootElement, this.options).then(([element]) => {
 				this.element = element;
 				if (this.onMount) this.onMount({ element });
 			});
@@ -37,7 +37,7 @@ class SvelteComponentController {
 	$onChanges(changes: any) {
 		if (changes.props?.currentValue) {
 			if (this.propsElement.content) {
-				this.propsElement.content.textContent = SvelteInjector.serializeProps(this.props, this.encode);
+				this.propsElement.content.textContent = serializeProps(this.props, this.encode);
 			}
 		}
 	}
@@ -75,12 +75,12 @@ export const svelteComponent = {
 	template: `<div data-component-name="{{$ctrl.component || $ctrl.componentName}}" data-to-render="{{$ctrl.toRender}}"></div>`,
 	controller: SvelteComponentController,
 	bindings: {
-		component: "@",
-		componentName: "@",
-		props: "<",
-		toRender: "<",
-		options: "<",
-		encode: "<",
-		onMount: "&",
-	},
+		component: '@',
+		componentName: '@',
+		props: '<',
+		toRender: '<',
+		options: '<',
+		encode: '<',
+		onMount: '&'
+	}
 };

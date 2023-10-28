@@ -1,70 +1,69 @@
 {
-  "name": "svelte-injector",
-  "version": "2.1.2",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/KoRnFactory/svelte-injector.git"
-  },
-  "keywords": [
-    "svelte",
-    "injector",
-    "angularjs",
-    "framework",
-    "react",
-    "components",
-    "portal",
-    "framework",
-    "migrate",
-    "migration"
-  ],
-  "author": "Federico Varano",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/KoRnFactory/svelte-injector/issues"
-  },
-  "devDependencies": {
-    "@types/react": "^17.0.3",
-    "cpy-cli": "^3.1.1",
-    "cross-env": "^7.0.3",
-    "del-cli": "^3.0.1",
-    "exec-sh": "^0.4.0",
-    "inquirer": "^8.0.0",
-    "nodemon": "^2.0.16",
-    "prettier": "^2.2.1",
-    "prettier-plugin-svelte": "^2.1.1",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "simple-git": "^3.7.1",
-    "svelte": "^3.32.0",
-    "svelte-loader": "^3.0.0",
-    "ts-loader": "^8.0.14",
-    "tslint": "^6.1.3",
-    "tslint-config-prettier": "^1.18.0",
-    "typescript": "^4.7.3",
-    "webpack": "^5.18.0",
-    "webpack-cli": "^4.4.0"
-  },
-  "homepage": "https://github.com/KoRnFactory/svelte-injector#readme",
-  "description": "Tool to integrate svelte components into other frontend frameworks",
-  "scripts": {
-    "clean-lib": "del-cli \"lib/**/*\" \"!lib/package.json\" \"!lib/*.md\"",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "copy": "cpy **/*.svelte ../lib/ --cwd=src --parents",
-    "build-lib": "tsc && npm run copy",
-    "lib": "npm run clean-lib && npm run build-lib",
-    "lib:w": "npm run clean-lib && nodemon --watch src -e \"*\" --exec \"npm run build-lib\"",
-    "dev": "npm run clean-lib && webpack",
-    "prepare": "npm run lib",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "lint": "tslint -p tsconfig.json",
-    "preversion": "npm run lint",
-    "version": "npm run format && git add -A src",
-    "postversion": "git push && git push --tags",
-    "release": "node ./scripts/release"
-  },
-  "files": [
-    "lib/**/*"
-  ]
+	"name": "svelte-injector",
+	"version": "3.0.0-beta.0",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build && npm run package",
+		"preview": "vite preview",
+		"package": "svelte-kit sync && svelte-package && publint",
+		"package:w": "svelte-kit sync && svelte-package --watch",
+		"prepublishOnly": "npm run package",
+		"test": "npm run test:integration && npm run test:unit",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test:integration": "playwright test",
+		"test:unit": "vitest",
+		"lint": "prettier --plugin-search-dir . --check .",
+		"format": "prettier --plugin-search-dir . --write .",
+		"postversion": "git push origin --follow-tags HEAD & npm publish"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"svelte": "./dist/index.js"
+		},
+		"./*": {
+			"types": [
+				"./dist/*",
+				"./dist/*.d.ts",
+				"./dist/*/index.d.ts"
+			],
+			"svelte": [
+				"./dist/*",
+				"./dist/*.js",
+				"./dist/*/index.js"
+			]
+		}
+	},
+	"files": [
+		"dist",
+		"!dist/**/*.test.*",
+		"!dist/**/*.spec.*"
+	],
+	"peerDependencies": {
+		"svelte": "^3.44.0 || ^4.0.0"
+	},
+	"optionalDependencies": {
+		"angular": "^1.5.11",
+		"react": ">=16.14.0"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.39.0",
+		"@sveltejs/adapter-auto": "^2.0.0",
+		"@sveltejs/kit": "^1.26.0",
+		"@sveltejs/package": "^2.2.2",
+		"@types/react": "^16.14.43",
+		"prettier": "^3.0.3",
+		"prettier-plugin-svelte": "^3.0.3",
+		"publint": "^0.2.5",
+		"svelte": "^4.2.2",
+		"svelte-check": "^3.5.2",
+		"tslib": "^2.6.2",
+		"typescript": "^5.2.2",
+		"vite": "^4.5.0",
+		"vitest": "^0.34.6"
+	},
+	"svelte": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"type": "module"
 }
