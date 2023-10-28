@@ -1,6 +1,16 @@
 {
 	"name": "svelte-injector",
 	"version": "3.0.0-beta.0",
+	"homepage": "https://github.com/KoRnFactory/svelte-injector#readme",
+	"description": "Tool to integrate svelte components into other frontend frameworks",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/KoRnFactory/svelte-injector.git"
+	},
+	"author": {
+		"name": "Federico Varano (KoRnFactory)",
+		"email": "lars.gordon@gmail.com"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run package",
