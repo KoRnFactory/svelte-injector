@@ -1,6 +1,6 @@
 {
 	"name": "svelte-injector",
-	"version": "3.0.0-beta.0",
+	"version": "3.0.0-beta.1",
 	"homepage": "https://github.com/KoRnFactory/svelte-injector#readme",
 	"description": "Tool to integrate svelte components into other frontend frameworks",
 	"repository": {
